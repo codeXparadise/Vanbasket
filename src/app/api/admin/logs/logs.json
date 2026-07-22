@@ -1,0 +1,58 @@
+[
+  {
+    "id": "shwayxf",
+    "timestamp": "2026-07-02T17:48:41.345Z",
+    "action": "ORDER_STATUS_UPDATE",
+    "admin": "Admin Partner",
+    "details": "Updated order ORD-2026-AD2864B8 status to \"paid\""
+  },
+  {
+    "id": "2ges3fi",
+    "timestamp": "2026-07-02T17:49:18.979Z",
+    "action": "ORDER_STATUS_UPDATE",
+    "admin": "Admin Partner",
+    "details": "Updated order ORD-2026-AD2864B8 status to \"delivered\""
+  },
+  {
+    "id": "74aqkpi",
+    "timestamp": "2026-07-07T11:46:17.050Z",
+    "action": "ORDER_STATUS_UPDATE",
+    "admin": "Admin Partner",
+    "details": "Updated order ORD-2026-EE8713F9 status to \"shipped\""
+  },
+  {
+    "id": "dyiuwbf",
+    "timestamp": "2026-07-07T11:46:54.795Z",
+    "action": "ORDER_STATUS_UPDATE",
+    "admin": "Admin Partner",
+    "details": "Updated order ORD-2026-EE8713F9 status to \"delivered\""
+  },
+  {
+    "id": "iamqevo",
+    "timestamp": "2026-07-18T17:39:47.670Z",
+    "action": "ORDER_STATUS_UPDATE",
+    "admin": "Admin Partner",
+    "details": "Updated order ORD-2026-2552C7B2 status to \"delivered\""
+  },
+  {
+    "id": "njr8gb6",
+    "timestamp": "2026-07-18T18:01:19.347Z",
+    "action": "ORDER_STATUS_UPDATE",
+    "admin": "Admin Partner",
+    "details": "Updated order ORD-2026-9E4DD5AA status to \"delivered\""
+  },
+  {
+    "id": "t2ne1b8",
+    "timestamp": "2026-07-21T17:46:49.010Z",
+    "action": "CREATE_ADMIN",
+    "admin": "Vishal Prajapati",
+    "details": "Assigned new admin: bhupendra@gmail.com (Bhupendra Sahu)"
+  },
+  {
+    "id": "ve10v5k",
+    "timestamp": "2026-07-21T18:14:45.352Z",
+    "action": "REVOKE_ADMIN",
+    "admin": "Vishal Prajapati",
+    "details": "Revoked admin privileges and deleted auth profile: bhupendra@gmail.com"
+  }
+]

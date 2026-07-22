@@ -1,0 +1,7 @@
+VAN BASKET - PRODUCTION & ENVIRONMENT GUIDE
+============================================
+
+1. Admin Panel URL: /admin/login
+2. Storefront Sign-in URL: /login
+
+Note: Create your admin accounts safely through Supabase Auth or API endpoints.
