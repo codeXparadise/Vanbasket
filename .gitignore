@@ -26,7 +26,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+# [FIXED] - Environment Variable Audit (.gitignore)
+.env
 .env*.local
+.env.production
+.env.local
 
 # vercel
 .vercel

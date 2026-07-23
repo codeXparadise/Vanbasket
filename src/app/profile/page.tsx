@@ -867,12 +867,12 @@ export default function ProfilePage() {
                           return (
                             <>
                               <div className="flex justify-between">
-                                <span className="text-brand-espresso/50">Gateway Provider:</span>
-                                <span className="font-bold uppercase text-brand-espresso">{pay.gateway}</span>
+                                <span className="text-brand-espresso/50">Payment Method:</span>
+                                <span className="font-bold text-brand-espresso">{pay.gateway === "cod" || selectedOrder.status === "pending_cod" ? "Cash on Delivery (COD)" : pay.gateway.toUpperCase()}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-brand-espresso/50">Transaction Status:</span>
-                                <span className={`font-bold uppercase ${pay.status === "captured" || pay.status === "confirmed" ? "text-brand-forest" : "text-brand-terracotta"}`}>
+                                <span className={`font-bold uppercase ${pay.status === "captured" || pay.status === "confirmed" || pay.status === "paid" ? "text-brand-forest" : "text-brand-terracotta"}`}>
                                   {pay.status}
                                 </span>
                               </div>

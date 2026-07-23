@@ -5,7 +5,8 @@ import { createClient } from "@/utils/supabase/client";
 import { useAdminState, Order } from "@/context/AdminContext";
 import { Loader2, Check, AlertCircle, Eye, Search, CreditCard, Tag, ArrowLeft, RefreshCw } from "lucide-react";
 
-const ORDER_STATUS_OPTIONS = ["pending", "paid", "failed", "shipped", "delivered", "cancelled", "refunded"];
+// [FIXED] - Add Cash on Delivery (COD) Payment Option
+const ORDER_STATUS_OPTIONS = ["pending", "pending_cod", "cod_pending", "paid", "failed", "shipped", "delivered", "cancelled", "refunded"];
 
 export default function AdminOrdersPage() {
   const [supabase] = useState(() => createClient());
@@ -215,17 +216,21 @@ export default function AdminOrdersPage() {
           <button
             onClick={() => {
               if (!filteredOrders.length) return;
-              const headers = ["Order Number", "Date", "Customer Name", "Email", "Phone", "Total Amount", "Status", "Coupon"];
-              const rows = filteredOrders.map((o) => [
-                `"${o.order_number || o.id}"`,
-                `"${new Date(o.created_at).toLocaleDateString()}"`,
-                `"${o.profiles?.full_name || "Guest"}"`,
-                `"${o.profiles?.email || ""}"`,
-                `"${o.profiles?.phone || ""}"`,
-                `"${Number(o.total_amount).toFixed(2)}"`,
-                `"${o.status}"`,
-                `"${o.coupon_code || ""}"`,
-              ]);
+              const headers = ["Order Number", "Date", "Customer Name", "Email", "Phone", "Payment Method", "Total Amount", "Status", "Coupon"];
+              const rows = filteredOrders.map((o) => {
+                const isCod = o.status === "pending_cod" || o.status === "cod_pending" || o.payments?.some((p) => p.gateway === "cod" || p.method === "Cash on Delivery");
+                return [
+                  `"${o.order_number || o.id}"`,
+                  `"${new Date(o.created_at).toLocaleDateString()}"`,
+                  `"${o.profiles?.full_name || "Guest"}"`,
+                  `"${o.profiles?.email || ""}"`,
+                  `"${o.profiles?.phone || ""}"`,
+                  `"${isCod ? "Cash on Delivery (COD)" : "Online Payment"}"`,
+                  `"${Number(o.total_amount).toFixed(2)}"`,
+                  `"${o.status}"`,
+                  `"${o.coupon_code || ""}"`,
+                ];
+              });
               const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
               const encodedUri = encodeURI(csvContent);
               const link = document.createElement("a");
@@ -285,6 +290,7 @@ export default function AdminOrdersPage() {
                   <th className="p-3.5 font-semibold">Order No</th>
                   <th className="p-3.5 font-semibold">Customer</th>
                   <th className="p-3.5 font-semibold">Date</th>
+                  <th className="p-3.5 font-semibold">Payment</th>
                   <th className="p-3.5 font-semibold">Status</th>
                   <th className="p-3.5 font-semibold">Total</th>
                   <th className="p-3.5 font-semibold text-center">Action</th>
@@ -293,7 +299,7 @@ export default function AdminOrdersPage() {
               <tbody className="divide-y divide-brand-cream-light font-medium text-brand-espresso">
                 {filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-brand-espresso/45">
+                    <td colSpan={7} className="p-8 text-center text-brand-espresso/45">
                       No matching transactions found.
                     </td>
                   </tr>
@@ -301,6 +307,7 @@ export default function AdminOrdersPage() {
                   filteredOrders.map((o) => {
                     const isUnread = !readOrderIds.includes(o.id);
                     const isSelected = selectedOrder?.id === o.id;
+                    const isCod = o.status === "pending_cod" || o.status === "cod_pending" || o.payments?.some((p) => p.gateway === "cod" || p.method === "Cash on Delivery");
                     return (
                       <tr
                         key={o.id}
@@ -315,6 +322,13 @@ export default function AdminOrdersPage() {
                         </td>
                         <td className="p-3.5 text-brand-espresso/65">
                           {new Date(o.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="p-3.5">
+                          <span className={`px-2.5 py-1 rounded-full text-[9px] uppercase font-extrabold tracking-wider border ${
+                            isCod ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-blue-100 text-blue-900 border-blue-300"
+                          }`}>
+                            {isCod ? "COD" : "Online"}
+                          </span>
                         </td>
                         <td className="p-3.5" onClick={(e) => e.stopPropagation()}>
                           <select
@@ -513,6 +527,16 @@ export default function AdminOrdersPage() {
                 <p className="text-[11px] text-brand-espresso/45 font-bold italic">
                   No payment attempts logged for this order.
                 </p>
+              )}
+
+              {/* [FIXED] - Mark COD order as paid manually */}
+              {(selectedOrder.status === "pending_cod" || selectedOrder.status === "cod_pending" || selectedOrder.payments?.some((p) => p.gateway === "cod")) && selectedOrder.status !== "paid" && (
+                <button
+                  onClick={() => handleStatusChange(selectedOrder.id, selectedOrder.order_number, "paid")}
+                  className="w-full h-10 mt-2 bg-brand-forest text-white font-sans font-bold uppercase tracking-wider text-[10px] rounded-xl hover:bg-brand-forest/90 transition shadow-sm cursor-pointer"
+                >
+                  Mark COD Order as Paid
+                </button>
               )}
             </div>
           </div>

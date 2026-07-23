@@ -196,13 +196,17 @@ export async function POST(request: Request) {
     // Generate human-readable order number
     const orderNumber = `ORD-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
-    // 5. Insert order as PENDING
+    // [FIXED] - Add Cash on Delivery (COD) Payment Option
+    const paymentMethod = typeof body?.paymentMethod === "string" ? body.paymentMethod : "online";
+    const initialStatus = "pending";
+
+    // 5. Insert order
     const { data: orderData, error: orderInsertError } = await adminSupabase
       .from("orders")
       .insert({
         user_id: user.id,
         order_number: orderNumber,
-        status: "PENDING",
+        status: initialStatus,
         subtotal: subtotal,
         shipping_fee: 0,
         total_amount: finalTotal,
@@ -261,6 +265,40 @@ export async function POST(request: Request) {
           );
         }
       }
+    }
+
+    // [FIXED] - Add Cash on Delivery (COD) Payment Option
+    if (paymentMethod === "cod") {
+      const { error: paymentInsertError } = await adminSupabase
+        .from("payments")
+        .insert({
+          order_id: orderData.id,
+          gateway: "cod",
+          gateway_order_id: `COD-${orderNumber}`,
+          status: "pending_cod",
+          amount: finalTotal,
+          currency: "INR",
+          method: "Cash on Delivery",
+        })
+        .select()
+        .single();
+
+      if (paymentInsertError) {
+        console.error("Warning: Failed to log COD payment record:", paymentInsertError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        payment_method: "cod",
+        is_cod: true,
+        order_id: `COD-${orderNumber}`,
+        amount: Math.round(finalTotal * 100),
+        currency: "INR",
+        receipt: orderNumber,
+        db_order_id: orderData.id,
+        order_number: orderNumber,
+        status: "pending_cod",
+      });
     }
 
     // 8. Create Razorpay order
@@ -334,6 +372,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      payment_method: "online",
       order_id: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,

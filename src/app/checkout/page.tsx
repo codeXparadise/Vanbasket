@@ -40,12 +40,14 @@ interface Address {
   created_at: string;
 }
 
+// [FIXED] - Add Cash on Delivery (COD) Payment Option
 interface OrderResult {
   id: string;
   order_number: string;
   total_amount: number;
   currency: string;
   status: string;
+  payment_method?: string;
 }
 
 export default function CheckoutPage() {
@@ -61,6 +63,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
   
   const [orderWriteResult, setOrderWriteResult] = useState<OrderResult | null>(null);
   
@@ -213,6 +216,17 @@ export default function CheckoutPage() {
         }
 
         setUser(authUser);
+        // Fetch profile phone number to prefill address contact
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("phone")
+          .eq("id", authUser.id)
+          .maybeSingle();
+
+        if (profile?.phone) {
+          setAddressForm((prev) => ({ ...prev, phone: profile.phone || "" }));
+        }
+
         await fetchAddresses(authUser.id);
       } catch (err) {
         console.error("initCheckout error:", err);
@@ -348,6 +362,43 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
+      // [FIXED] - Add Cash on Delivery (COD) Payment Option
+      if (paymentMethod === "cod") {
+        const response = await fetch("/api/payment/create-order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            cartItems: cartItems.map((item) => ({ id: item.id, quantity: item.quantity })),
+            shippingAddressId: selectedAddressId,
+            couponCode: appliedCoupon ? appliedCoupon.code : null,
+            paymentMethod: "cod",
+          }),
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok) {
+          setError(resData.error || "Failed to place Cash on Delivery order.");
+          setIsLoadingAction(false);
+          return;
+        }
+
+        setOrderWriteResult({
+          id: resData.db_order_id,
+          order_number: resData.order_number,
+          total_amount: resData.amount / 100,
+          currency: resData.currency || "INR",
+          status: "pending_cod",
+          payment_method: "Cash on Delivery",
+        });
+        clearCart();
+        setActiveStep(3);
+        setIsLoadingAction(false);
+        return;
+      }
+
       // 1. Load Razorpay Checkout Script
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
@@ -369,6 +420,7 @@ export default function CheckoutPage() {
             cartItems: cartItems.map((item) => ({ id: item.id, quantity: item.quantity })),
             shippingAddressId: selectedAddressId,
             couponCode: appliedCoupon ? appliedCoupon.code : null,
+            paymentMethod: "online",
           }),
         });
 
@@ -630,6 +682,10 @@ export default function CheckoutPage() {
                 <div>
                   <p className="text-[10px] uppercase tracking-widest text-brand-espresso-muted mb-1">Status</p>
                   <p className="font-semibold uppercase text-brand-forest">{orderWriteResult.status}</p>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-brand-cream-dark/40">
+                  <p className="text-[10px] uppercase tracking-widest text-brand-espresso-muted mb-1">Payment Method</p>
+                  <p className="font-bold text-brand-espresso">{orderWriteResult.payment_method || "Online Payment"}</p>
                 </div>
               </div>
             </div>
@@ -1036,18 +1092,63 @@ export default function CheckoutPage() {
               </button>
             </div>
 
-            <div className="p-5 bg-brand-cream-warm/35 rounded-2xl border border-brand-cream-dark/60 space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-brand-honey/10 flex items-center justify-center text-brand-honey">
-                  <ShieldCheck className="w-4 h-4" />
+            {/* [FIXED] - Add Cash on Delivery (COD) Payment Option */}
+            <div className="space-y-4">
+              <label
+                onClick={() => setPaymentMethod("online")}
+                className={`p-5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all duration-300 ${
+                  paymentMethod === "online"
+                    ? "bg-brand-cream-warm/40 border-brand-honey shadow-sm"
+                    : "bg-brand-cream-light border-brand-cream-dark/80 hover:border-brand-espresso"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentMethod === "online"}
+                    onChange={() => setPaymentMethod("online")}
+                    className="accent-brand-honey w-4 h-4"
+                  />
+                  <div className="w-8 h-8 rounded-full bg-brand-honey/10 flex items-center justify-center text-brand-honey">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-sm text-brand-espresso">Razorpay Secure Checkout</h4>
+                    <p className="font-sans text-[10px] text-brand-espresso-muted leading-relaxed mt-0.5">
+                      Pay securely with Cards, UPI, Netbanking, or Wallets in INR.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-brand-espresso">Razorpay Secure Checkout</h4>
-                  <p className="font-sans text-[10px] text-brand-espresso-muted leading-relaxed mt-0.5">
-                    Pay securely with Cards, UPI, Netbanking, or Wallets in INR.
-                  </p>
+              </label>
+
+              <label
+                onClick={() => setPaymentMethod("cod")}
+                className={`p-5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all duration-300 ${
+                  paymentMethod === "cod"
+                    ? "bg-brand-cream-warm/40 border-brand-honey shadow-sm"
+                    : "bg-brand-cream-light border-brand-cream-dark/80 hover:border-brand-espresso"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentMethod === "cod"}
+                    onChange={() => setPaymentMethod("cod")}
+                    className="accent-brand-honey w-4 h-4"
+                  />
+                  <div className="w-8 h-8 rounded-full bg-brand-forest/10 flex items-center justify-center text-brand-forest">
+                    <CreditCard className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-sm text-brand-espresso">Cash on Delivery (COD)</h4>
+                    <p className="font-sans text-[10px] text-brand-espresso-muted leading-relaxed mt-0.5">
+                      Pay in cash directly to delivery executive upon order delivery.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </label>
             </div>
 
             <div className="pt-4">

@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Lock, Mail, Loader2, AlertCircle } from "lucide-react";
 
+// [FIXED] - Add VanBasket Brand Logo & Name Everywhere
+import BrandLogo from "@/components/BrandLogo";
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -66,15 +69,13 @@ export default function AdminLoginPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[35vw] h-[35vw] rounded-full bg-brand-honey/10 blur-[100px]" />
 
       <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-brand-cream-dark/60 rounded-3xl p-8 md:p-10 shadow-2xl relative z-10">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-brand-honey/10 rounded-2xl text-brand-honey mb-4">
-            <Lock className="w-6 h-6" />
-          </div>
-          <h1 className="text-2xl font-serif text-brand-espresso font-semibold tracking-wide">
-            VÁN BASKET
+        <div className="text-center mb-8 flex flex-col items-center">
+          <BrandLogo width={140} height={45} showText={true} className="mb-4" />
+          <h1 className="text-xl font-serif text-brand-espresso font-bold tracking-wide">
+            VanBasket Admin Panel
           </h1>
           <p className="text-xs uppercase tracking-widest text-brand-espresso/60 mt-1 font-semibold">
-            Admin Control Center
+            Control Center
           </p>
         </div>
 

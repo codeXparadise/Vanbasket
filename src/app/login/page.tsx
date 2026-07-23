@@ -4,9 +4,9 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
-import Image from "next/image";
+import { Mail, Lock, User, Phone, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { LottiePlayer } from "@/components/LottiePlayer";
+import BrandLogo from "@/components/BrandLogo";
 
 function LoginContent() {
   const router = useRouter();
@@ -25,11 +25,18 @@ function LoginContent() {
 
   // Register only states
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const redirectUrl = searchParams?.get("redirect") || "/";
+
+  // [FIXED] - Fix "Forgot Password" Flow
+  useEffect(() => {
+    if (searchParams?.get("reset") === "success") {
+      setResetMessage("Password updated successfully! Please sign in with your new password.");
+    }
+  }, [searchParams]);
 
   // Check if already logged in
   useEffect(() => {
@@ -114,6 +121,12 @@ function LoginContent() {
       return;
     }
 
+    if (!phone.trim() || !/^[+()0-9\s-]{7,20}$/.test(phone.trim())) {
+      setError("Please enter a valid mandatory phone number.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
@@ -122,6 +135,7 @@ function LoginContent() {
           email: email.trim(),
           password,
           fullName: fullName.trim(),
+          phone: phone.trim(),
         }),
       });
 
@@ -167,30 +181,6 @@ function LoginContent() {
       setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!email.trim()) {
-      setError("Please enter your email first.");
-      return;
-    }
-
-    setIsResettingPassword(true);
-    setError(null);
-    setResetMessage(null);
-
-    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/login` : undefined;
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo,
-    });
-
-    if (resetError) {
-      setError(resetError.message);
-    } else {
-      setResetMessage("Password reset email sent. Please check your inbox.");
-    }
-
-    setIsResettingPassword(false);
   };
 
   return (
@@ -244,10 +234,11 @@ function LoginContent() {
           <div className="w-full max-w-md bg-white/45 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-8 md:p-10 shadow-2xl flex flex-col justify-between relative z-10">
             
             {/* Header & Logo */}
+            {/* [FIXED] - Add VanBasket Brand Logo & Name Everywhere */}
             <div className="flex flex-col items-center mb-8">
-              <Link href="/" className="h-10 w-32 relative text-brand-espresso mb-4 transition-transform hover:scale-[1.02]">
-                <Image src="/assets/logo.svg" alt="VAN BASKET" fill sizes="128px" className="object-contain" />
-              </Link>
+              <div className="mb-4 transition-transform hover:scale-[1.02]">
+                <BrandLogo href="/" width={140} height={45} showText={true} />
+              </div>
               
               {/* Tab Selectors for Side-by-Side Split Form */}
               <div className="flex bg-brand-espresso/5 border border-brand-cream-dark/50 rounded-full p-1 w-full max-w-[280px] mt-2 relative">
@@ -275,8 +266,20 @@ function LoginContent() {
             </div>
 
             {error && (
-              <div className="p-3.5 bg-brand-terracotta/10 border border-brand-terracotta/30 text-brand-terracotta text-xs rounded-xl mb-5 text-center" role="alert">
-                {error}
+              <div className="p-3.5 bg-brand-terracotta/10 border border-brand-terracotta/30 text-brand-terracotta text-xs rounded-xl mb-5 text-center space-y-2" role="alert">
+                <p>{error}</p>
+                {error.toLowerCase().includes("already registered") && activeForm === "register" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveForm("login");
+                      setError(null);
+                    }}
+                    className="inline-block px-3 py-1 bg-brand-espresso text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-brand-espresso/80 transition-colors shadow-sm cursor-pointer"
+                  >
+                    Click Here To Sign In
+                  </button>
+                )}
               </div>
             )}
             {resetMessage && (
@@ -318,9 +321,10 @@ function LoginContent() {
                       <label htmlFor="login-password" className="text-[10px] uppercase tracking-widest text-brand-espresso font-bold">
                         Password
                       </label>
-                      <button type="button" onClick={handleForgotPassword} className="text-[9px] text-brand-honey font-bold uppercase tracking-wider hover:underline disabled:opacity-50" disabled={isResettingPassword}>
-                        {isResettingPassword ? "Sending..." : "Forgot?"}
-                      </button>
+                      {/* [FIXED] - Fix "Forgot Password" Flow */}
+                      <Link href="/forgot-password" className="text-[9px] text-brand-honey font-bold uppercase tracking-wider hover:underline">
+                        Forgot?
+                      </Link>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-4 top-3.5 w-4 h-4 text-brand-espresso/35" />
@@ -380,6 +384,25 @@ function LoginContent() {
                         className="w-full h-12 pl-11 pr-4 rounded-xl bg-white/40 border border-brand-cream-dark/80 focus:border-brand-honey focus:outline-none font-sans text-sm backdrop-blur"
                         required
                         autoComplete="name"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="reg-phone" className="text-[10px] uppercase tracking-widest text-brand-espresso font-bold">
+                      Phone Number <span className="text-brand-terracotta">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-3.5 w-4 h-4 text-brand-espresso/35" />
+                      <input
+                        type="tel"
+                        id="reg-phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+91 9876543210"
+                        className="w-full h-12 pl-11 pr-4 rounded-xl bg-white/40 border border-brand-cream-dark/80 focus:border-brand-honey focus:outline-none font-sans text-sm backdrop-blur"
+                        required
+                        autoComplete="tel"
                       />
                     </div>
                   </div>

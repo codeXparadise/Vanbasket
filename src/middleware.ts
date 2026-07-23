@@ -45,15 +45,36 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Admin route protection
+  // [FIXED] - Protect Admin Routes in Middleware
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login");
-  if (isAdminRoute && !user) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+  if (isAdminRoute) {
+    if (!user) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+
+    // Role verification for admin routes
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile || profile.role !== "admin") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   // Redirect logged in users away from admin login
   if (request.nextUrl.pathname.startsWith("/admin/login") && user) {
-    return NextResponse.redirect(new URL("/admin", request.url));
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile?.role === "admin") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
   }
 
   // Redirect authenticated users away from auth pages

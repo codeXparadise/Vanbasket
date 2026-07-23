@@ -1,14 +1,28 @@
+// [FIXED] - API Rate Limiting & Input Sanitization
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/utils/supabase/service-role";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { sanitizeInput } from "@/lib/sanitize";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    if (!rateLimit(`signup-${ip}`, 5, 60000)) {
+      return NextResponse.json(
+        { error: "Too many signup requests. Please wait a minute before trying again." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
-    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const rawEmail = typeof body?.email === "string" ? body.email : "";
+    const email = sanitizeInput(rawEmail.trim().toLowerCase());
     const password = typeof body?.password === "string" ? body.password : "";
-    const fullName = typeof body?.fullName === "string" ? body.fullName.trim() : "";
+    const fullName = sanitizeInput(typeof body?.fullName === "string" ? body.fullName.trim() : "");
+    const rawPhone = typeof body?.phone === "string" ? body.phone : "";
+    const phone = sanitizeInput(rawPhone.trim());
 
     if (!EMAIL_PATTERN.test(email)) {
       return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
@@ -22,19 +36,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please enter your full name." }, { status: 400 });
     }
 
+    if (!phone || !/^[+()0-9\s-]{7,20}$/.test(phone)) {
+      return NextResponse.json({ error: "Mandatory phone number is required." }, { status: 400 });
+    }
+
     const supabaseAdmin = createServiceRoleClient();
 
-    // Check if an existing profile with this email already has the admin role assigned
-    const { data: existingAdmin } = await supabaseAdmin
+    // Check if an existing profile with this email already exists
+    const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
-      .select("id, role")
+      .select("id, role, email")
       .eq("email", email)
-      .eq("role", "admin")
       .maybeSingle();
 
-    if (existingAdmin) {
+    if (existingProfile) {
+      if (existingProfile.role === "admin") {
+        return NextResponse.json(
+          { error: "This email address is already assigned as an Administrator. Please log in via the Admin Portal." },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
-        { error: "This email address is already assigned as an Administrator. You cannot sign up with this email; please use a different email ID or login via Admin Portal." },
+        { error: "This email address is already registered. Please log in to your account instead." },
         { status: 400 }
       );
     }
@@ -42,14 +65,35 @@ export async function POST(request: Request) {
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
+      phone: phone.replace(/[^\d+]/g, ""), // cleaned phone format for auth
       email_confirm: true,
       user_metadata: {
         full_name: fullName,
+        phone: phone,
       },
     });
 
     if (error) {
+      const errMsg = error.message.toLowerCase();
+      if (errMsg.includes("already registered") || errMsg.includes("already exists") || errMsg.includes("user_already_exists")) {
+        return NextResponse.json(
+          { error: "This email address is already registered. Please log in to your account instead." },
+          { status: 400 }
+        );
+      }
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (data.user) {
+      // Upsert profile with mandatory phone number
+      await supabaseAdmin.from("profiles").upsert({
+        id: data.user.id,
+        email: email,
+        full_name: fullName,
+        phone: phone,
+        role: "user",
+        updated_at: new Date().toISOString(),
+      });
     }
 
     return NextResponse.json({

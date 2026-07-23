@@ -1,0 +1,20 @@
+# Standard robots.txt for VanBasket (Googlebot & Search Engine Crawlers)
+
+User-agent: *
+Allow: /
+Allow: /catalogue
+Allow: /about-us
+Allow: /contact-us
+Allow: /login
+Allow: /signup
+
+Disallow: /admin/
+Disallow: /admin/*
+Disallow: /api/
+Disallow: /checkout
+Disallow: /profile
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /complete-profile
+
+Sitemap: https://vanbasket.com/sitemap.xml

@@ -16,6 +16,8 @@ import {
   MessageSquare,
   Bell,
 } from "lucide-react";
+// [FIXED] - Add VanBasket Brand Logo & Name Everywhere
+import BrandLogo from "@/components/BrandLogo";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -210,9 +212,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div>
           <div className="h-20 flex items-center justify-between px-6 border-b border-brand-cream-warm/10 animate-fade-in">
             {!isSidebarCollapsed && (
-              <Link href="/admin" className="font-serif text-lg tracking-widest font-bold text-white transition-opacity duration-300">
-                VAN BASKET
-              </Link>
+              <div className="flex items-center gap-2">
+                <BrandLogo width={90} height={30} showText={false} href="/admin" />
+                <span className="font-serif text-sm tracking-wider font-bold text-white">VanBasket Admin</span>
+              </div>
             )}
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -306,9 +309,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Mobile Header / Navbar */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 md:hidden bg-brand-espresso text-brand-cream-light flex items-center justify-between px-6 border-b border-brand-cream-warm/15 shrink-0 z-30">
-          <Link href="/admin" className="font-serif text-sm tracking-widest font-bold text-white">
-            VÁN BASKET
-          </Link>
+          <div className="flex items-center gap-2">
+            <BrandLogo width={70} height={24} showText={false} href="/admin" />
+            <span className="font-serif text-sm tracking-wider font-bold text-white">VanBasket Admin</span>
+          </div>
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
             className="p-1.5 rounded-lg hover:bg-white/10"
@@ -324,7 +328,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="relative w-4/5 max-w-xs bg-brand-espresso text-brand-cream-light flex flex-col justify-between p-6">
               <div>
                 <div className="flex items-center justify-between pb-6 border-b border-brand-cream-warm/10 mb-6">
-                  <span className="font-serif text-lg tracking-widest font-bold">VÁN BASKET</span>
+                  <div className="flex items-center gap-2">
+                    <BrandLogo width={70} height={24} showText={false} href="/admin" />
+                    <span className="font-serif text-sm tracking-wider font-bold text-white">VanBasket Admin</span>
+                  </div>
                   <button onClick={() => setIsMobileOpen(false)} className="p-1 text-brand-cream-warm">
                     <X className="w-5 h-5" />
                   </button>

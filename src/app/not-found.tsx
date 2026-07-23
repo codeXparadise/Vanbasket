@@ -1,7 +1,9 @@
+// [FIXED] - Custom 404 Page with VanBasket Branding
 import React from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { LottiePlayer } from "@/components/LottiePlayer";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function NotFound() {
   return (
@@ -12,6 +14,7 @@ export default function NotFound() {
       <div className="absolute inset-0 honeycomb-bg opacity-10 pointer-events-none" />
 
       <div className="relative z-10 max-w-md w-full glass-card rounded-[2.5rem] p-8 sm:p-10 shadow-2xl flex flex-col items-center">
+        <BrandLogo width={140} height={45} showText={true} className="mb-4" />
         <div className="h-48 w-48">
           <LottiePlayer src="/lottie/Page Not Found 404.lottie" label="404 page animation" className="h-full w-full" />
         </div>
