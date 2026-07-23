@@ -15,6 +15,7 @@ Version 2.0 brings major enhancements to production readiness, admin customer an
 - **Dynamic & Static `sitemap.xml`**:
   - Added `src/app/sitemap.ts` & `public/sitemap.xml`.
   - Automatically queries active product catalog slugs from Supabase to generate dynamic product page URLs.
+- **Google Analytics Tag (gtag.js)**: Integrated `G-5DNL355BVQ` via Next.js `Script` component in `src/app/layout.tsx`.
 - **JSON-LD Rich Snippets**: Integrated `Organization` & `WebSite` structured data schema in `src/app/layout.tsx` for Google Search Result enhancement.
 
 ---
