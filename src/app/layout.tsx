@@ -27,19 +27,29 @@ export const metadata: Metadata = {
     template: "%s | VanBasket",
   },
   description:
-    "Experience raw, unfiltered wild forest honey from Chhattisgarh. Sustainably harvested from Apis dorsata hives and bottled for modern wellness.",
+    "Experience 100% pure, raw, unfiltered wild forest honey from Chhattisgarh. Sustainably harvested from Apis dorsata hives and bottled for modern wellness.",
   keywords: [
     "VanBasket",
     "raw honey",
     "wild forest honey",
     "single origin honey",
     "organic honey",
+    "Apis dorsata honey",
     "premium honey",
     "luxury honey brand",
     "Chhattisgarh forest honey",
+    "unfiltered honey India",
+    "buy pure honey online",
   ],
+  alternates: {
+    canonical: siteUrl,
+  },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo.png", type: "image/png" },
+      { url: "/logo.svg", type: "image/svg+xml" },
+    ],
     shortcut: "/logo.png",
     apple: "/logo.png",
   },
@@ -50,6 +60,21 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "VanBasket",
     url: siteUrl,
+    locale: "en_IN",
+    images: [
+      {
+        url: `${siteUrl}/logo.png`,
+        width: 1200,
+        height: 630,
+        alt: "VanBasket Wild Forest Honey",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VanBasket - Raw Wild Forest Honey",
+    description: "100% pure, raw, unfiltered wild forest honey sustainably harvested from Chhattisgarh.",
+    images: [`${siteUrl}/logo.png`],
   },
   robots: {
     index: true,
@@ -72,14 +97,26 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jsonLd = {
+  const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "VanBasket",
     url: siteUrl,
-    logo: `${siteUrl}/assets/logo.png`,
-    description: "Sustainably harvested raw wild forest honey from Chhattisgarh.",
+    logo: `${siteUrl}/logo.png`,
+    description: "Sustainably harvested raw wild forest honey from Chhattisgarh, India.",
     sameAs: [],
+  };
+
+  const webSiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "VanBasket",
+    url: siteUrl,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${siteUrl}/catalogue?search={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
   };
 
   return (
@@ -101,10 +138,14 @@ export default function RootLayout({
           }}
         />
 
-        {/* Structured Data (JSON-LD) */}
+        {/* Structured Data (JSON-LD) for Google Rich Snippets */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
         />
       </head>
       <body
