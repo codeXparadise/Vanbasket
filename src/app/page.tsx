@@ -7,6 +7,7 @@ import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { ProductDetail } from "@/components/ProductDetail";
 import { TrustStrip } from "@/components/TrustStrip";
+import { GeoFaqSection } from "@/components/GeoFaqSection";
 import { CartDrawer } from "@/components/CartDrawer";
 import { Footer } from "@/components/Footer";
 
@@ -372,6 +373,8 @@ export default function Home() {
           </div>
         </section>
 
+        {/* GEO & FAQ Authenticity Section */}
+        <GeoFaqSection />
       </main>
 
       {/* Global Sliding Cart Drawer */}
