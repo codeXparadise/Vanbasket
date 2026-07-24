@@ -3,9 +3,14 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { LottiePlayer } from "@/components/LottiePlayer";
+
+const LottiePlayer = dynamic(
+  () => import("@/components/LottiePlayer").then((mod) => mod.LottiePlayer),
+  { ssr: false }
+);
 
 const heroFeatures = ["raw & unfiltered", "harvested ethically", "rich in antioxidants", "zero added sugar"];
 
@@ -53,11 +58,19 @@ export const Hero = () => {
 
   return (
     <section className="relative min-h-[calc(100svh-72px)] flex items-end overflow-hidden bg-brand-espresso text-brand-cream-light">
-      <Image src="/assets/hero-home-new.jpg" alt="Warm forest honey jar with wooden dipper" fill priority sizes="100vw" className="object-cover object-center" />
+      <Image
+        src="/assets/hero-home-new.jpg"
+        alt="Warm forest honey jar with wooden dipper"
+        fill
+        priority
+        quality={80}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+        className="object-cover object-center"
+      />
       <div className="absolute inset-0 bg-gradient-to-r from-brand-espresso/90 via-brand-espresso/55 to-brand-espresso/10" />
       <div className="absolute inset-0 bg-gradient-to-t from-brand-espresso/75 via-transparent to-brand-espresso/20" />
 
-      {/* Floating Bee animations */}
+      {/* Floating Bee animations - Deferred & hidden on mobile */}
       <div className="absolute left-[8%] top-[20%] hidden md:block h-16 w-16 opacity-90 animate-sparkle-1 pointer-events-none z-20">
         <LottiePlayer src="/lottie/bee.lottie" label="Floating Bee" className="h-full w-full" />
       </div>
@@ -82,7 +95,9 @@ export const Hero = () => {
               <p className="max-w-xl text-sm sm:text-base leading-relaxed text-brand-cream-light/75 font-light">
                 Apis dorsata raw single-origin honey, sustainably harvested by indigenous tribal communities in the biosphere reserves of Chhattisgarh. No added syrup. No compromised quality.
               </p>
-              <p className="text-sm sm:text-base font-sans text-brand-cream-light/90">Our honey is <span className="font-bold text-brand-honey">{typed}<span className="typing-cursor">|</span></span></p>
+              <p className="text-sm sm:text-base font-sans text-brand-cream-light/90 min-h-[1.5em]">
+                Our honey is <span className="font-bold text-brand-honey">{typed}<span className="typing-cursor">|</span></span>
+              </p>
             </div>
 
             <div className="flex flex-row items-center gap-4 pt-2">
