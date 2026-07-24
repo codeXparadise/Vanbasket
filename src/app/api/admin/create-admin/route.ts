@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       .from("profiles")
       .select("full_name, role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile || profile.role !== "admin") {
       return NextResponse.json({ error: "Access Denied" }, { status: 403 });
@@ -62,39 +62,72 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     // 3. Initialize service role client
     const supabaseAdmin = createServiceRoleClient();
 
-    // 4. Create auth user in Supabase
+    // 4. Check if profile already exists in DB
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role, email")
+      .eq("email", cleanEmail)
+      .maybeSingle();
+
+    if (existingProfile) {
+      if (existingProfile.role === "admin") {
+        return NextResponse.json(
+          { error: "Admin already exists with this email address." },
+          { status: 400 }
+        );
+      } else {
+        return NextResponse.json(
+          { error: "This email is already registered as a customer user. Only admins can register. Please contact the developer to promote an existing user." },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 5. Create auth user in Supabase
     const { data: adminUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: cleanEmail,
       password,
       email_confirm: true,
       user_metadata: { full_name: fullName },
     });
 
     if (createError || !adminUser.user) {
+      const errMsg = createError?.message || "";
+      if (errMsg.toLowerCase().includes("already registered") || errMsg.toLowerCase().includes("already exists")) {
+        return NextResponse.json(
+          { error: "Admin already exists with this email address." },
+          { status: 400 }
+        );
+      }
       return NextResponse.json({ error: createError?.message || "Failed to create user" }, { status: 500 });
     }
 
-    // 5. Explicitly insert/upsert profile to ensure they are admin
+    // 6. Explicitly insert/upsert profile with role='admin'
     const { error: profileUpdateError } = await supabaseAdmin
       .from("profiles")
       .upsert({
         id: adminUser.user.id,
-        email: email,
+        email: cleanEmail,
         full_name: fullName,
         phone: phone || null,
         role: "admin",
       });
 
     if (profileUpdateError) {
-      return NextResponse.json({ error: `User created but profile assignment failed: ${profileUpdateError.message}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `User created but profile assignment failed: ${profileUpdateError.message}` },
+        { status: 500 }
+      );
     }
 
-    // 6. Write to local logs
+    // 7. Write to local logs
     const adminName = profile.full_name || user.email || "Admin Partner";
-    appendAuditLog("CREATE_ADMIN", adminName, `Assigned new admin: ${email} (${fullName})`);
+    appendAuditLog("CREATE_ADMIN", adminName, `Assigned new admin: ${cleanEmail} (${fullName})`);
 
     return NextResponse.json({ success: true, user: adminUser.user });
   } catch (err: unknown) {

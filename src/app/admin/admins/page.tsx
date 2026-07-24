@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { useAdminState } from "@/context/AdminContext";
-import { AlertCircle, Loader2, ShieldAlert, UserPlus, X } from "lucide-react";
+import { AlertCircle, Loader2, ShieldAlert, UserPlus, X, Check } from "lucide-react";
 
 export default function AdminAdminsPage() {
   const { users, loadingUsers, isUsersLoaded, fetchUsers } = useAdminState();
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [modalFeedback, setModalFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [adminFullName, setAdminFullName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -23,6 +24,7 @@ export default function AdminAdminsPage() {
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
+    setModalFeedback(null);
     setIsCreatingAdmin(true);
 
     try {
@@ -49,7 +51,9 @@ export default function AdminAdminsPage() {
       fetchUsers(true);
     } catch (err: unknown) {
       const error = err as Error;
-      setFeedback({ type: "error", msg: error.message || "Could not create admin." });
+      const msg = error.message || "Could not create admin.";
+      setModalFeedback({ type: "error", msg });
+      setFeedback({ type: "error", msg });
     } finally {
       setIsCreatingAdmin(false);
     }
@@ -72,8 +76,11 @@ export default function AdminAdminsPage() {
           <p className="text-xs text-brand-espresso/60 mt-1">Create and monitor administrator access for the back office.</p>
         </div>
         <button
-          onClick={() => setShowCreateAdmin(true)}
-          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-espresso hover:bg-brand-espresso/90 text-brand-cream-light px-5 text-xs font-bold uppercase tracking-wider transition"
+          onClick={() => {
+            setModalFeedback(null);
+            setShowCreateAdmin(true);
+          }}
+          className="flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-espresso hover:bg-brand-espresso/90 text-brand-cream-light px-5 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
           Add Admin
@@ -81,8 +88,8 @@ export default function AdminAdminsPage() {
       </div>
 
       {feedback && (
-        <div className={`flex items-start gap-3 rounded-xl p-4 text-xs ${feedback.type === "success" ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+        <div className={`flex items-start gap-3 rounded-xl p-4 text-xs font-semibold ${feedback.type === "success" ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
+          {feedback.type === "success" ? <Check className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
           <span>{feedback.msg}</span>
         </div>
       )}
@@ -147,6 +154,14 @@ export default function AdminAdminsPage() {
               <ShieldAlert className="w-6 h-6" />
               <h2 className="text-xl font-serif text-brand-espresso font-semibold">Add New Admin</h2>
             </div>
+
+            {modalFeedback && (
+              <div className="mb-4 flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3.5 text-xs font-semibold">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{modalFeedback.msg}</span>
+              </div>
+            )}
+
             <form onSubmit={handleCreateAdmin} className="space-y-4">
               <input type="text" required value={adminFullName} onChange={(e) => setAdminFullName(e.target.value)} placeholder="Full name" className="w-full h-11 px-4 rounded-xl border border-brand-cream-dark bg-white focus:border-brand-honey focus:outline-none text-xs font-semibold text-brand-espresso" />
               <input type="email" required value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} placeholder="Email" className="w-full h-11 px-4 rounded-xl border border-brand-cream-dark bg-white focus:border-brand-honey focus:outline-none text-xs font-semibold text-brand-espresso" />

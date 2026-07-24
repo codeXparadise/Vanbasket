@@ -362,20 +362,29 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchUsers = useCallback(async (silent = false) => {
     if (!silent) setLoadingUsers(true);
     try {
+      let finalUsers: AdminUser[] = [];
       const { data: usersData, error: usersError } = await supabase
         .from("admin_user_view")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (usersError) throw usersError;
+      if (!usersError && usersData && usersData.length > 0) {
+        finalUsers = usersData as AdminUser[];
+      } else {
+        const { data: pData } = await supabase
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (pData) {
+          finalUsers = pData as AdminUser[];
+        }
+      }
 
-      const { data: addrData, error: addrError } = await supabase
+      const { data: addrData } = await supabase
         .from("addresses")
         .select("*");
 
-      if (addrError) throw addrError;
-
-      setUsers(usersData || []);
+      setUsers(finalUsers);
       setAddresses((addrData || []) as Address[]);
       setIsUsersLoaded(true);
     } catch (err) {
