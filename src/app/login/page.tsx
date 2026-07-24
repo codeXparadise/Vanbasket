@@ -52,7 +52,7 @@ function LoginContent() {
           await supabase.auth.signOut();
           router.refresh();
         } else {
-          router.push(redirectUrl);
+          window.location.assign(redirectUrl);
         }
       }
     };
@@ -92,9 +92,9 @@ function LoginContent() {
         }
 
         if (!profile || !profile.full_name) {
-          router.push(`/complete-profile?redirect=${encodeURIComponent(redirectUrl)}`);
+          window.location.assign(`/complete-profile?redirect=${encodeURIComponent(redirectUrl)}`);
         } else {
-          router.push(redirectUrl);
+          window.location.assign(redirectUrl);
         }
       }
     } catch {
@@ -171,9 +171,9 @@ function LoginContent() {
              .maybeSingle();
 
           if (!profile || !profile.full_name) {
-            router.push(`/complete-profile?redirect=${encodeURIComponent(redirectUrl)}`);
+            window.location.assign(`/complete-profile?redirect=${encodeURIComponent(redirectUrl)}`);
           } else {
-            router.push(redirectUrl);
+            window.location.assign(redirectUrl);
           }
         }
       }, 3500);

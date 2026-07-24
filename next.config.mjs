@@ -25,6 +25,9 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false, // removes "X-Powered-By: Next.js" header for security
+  turbopack: {
+    root: process.cwd(),
+  },
   async headers() {
     return [
       {

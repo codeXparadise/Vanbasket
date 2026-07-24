@@ -5,7 +5,7 @@ import { createServiceRoleClient } from "@/utils/supabase/service-role";
 export async function POST(request: Request) {
   try {
     // 1. Verify user is authenticated and has admin role
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {

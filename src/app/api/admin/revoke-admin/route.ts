@@ -34,7 +34,7 @@ function appendAuditLog(action: string, admin: string, details: string) {
 export async function POST(request: Request) {
   try {
     // 1. Authenticate requesting user and verify admin role
-    const supabaseServer = createServerClient();
+    const supabaseServer = await createServerClient();
     const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
 
     if (authError || !user) {

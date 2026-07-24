@@ -37,7 +37,7 @@ function isValidCartItem(item: unknown): item is CartInputItem {
 export async function POST(request: Request) {
   try {
     // 1. Verify user is authenticated server-side
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -275,6 +275,7 @@ export async function POST(request: Request) {
           order_id: orderData.id,
           gateway: "cod",
           gateway_order_id: `COD-${orderNumber}`,
+          gateway_payment_id: `COD-PAY-${orderNumber}`,
           status: "pending_cod",
           amount: finalTotal,
           currency: "INR",
@@ -352,23 +353,27 @@ export async function POST(request: Request) {
       console.error("Warning: Failed to log initial payment record:", paymentInsertError);
     }
 
-    // 10. Audit log the order creation request/response
-    await adminSupabase.from("payment_logs").insert({
-      payment_id: paymentData?.id || null,
-      order_id: orderData.id,
-      event_type: "request",
-      payload: {
-        action: "create-order",
-        cartItems: typedCartItems,
-        dbOrder: orderData,
-        razorpayOrder: {
-          id: razorpayOrder.id,
-          amount: razorpayOrder.amount,
-          currency: razorpayOrder.currency,
-          receipt: razorpayOrder.receipt,
+    // 10. Audit log the order creation request/response (optional logger)
+    try {
+      await adminSupabase.from("payment_logs").insert({
+        payment_id: paymentData?.id || null,
+        order_id: orderData.id,
+        event_type: "request",
+        payload: {
+          action: "create-order",
+          cartItems: typedCartItems,
+          dbOrder: orderData,
+          razorpayOrder: {
+            id: razorpayOrder.id,
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            receipt: razorpayOrder.receipt,
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Optional logger
+    }
 
     return NextResponse.json({
       success: true,

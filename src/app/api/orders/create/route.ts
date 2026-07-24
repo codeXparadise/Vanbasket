@@ -36,7 +36,7 @@ function isValidCartItem(item: unknown): item is CartInputItem {
 export async function POST(request: Request) {
   try {
     // 1. Verify user is authenticated server-side
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {

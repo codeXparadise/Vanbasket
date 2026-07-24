@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 
 const PROTECTED_ROUTES = ["/profile", "/checkout", "/complete-profile"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -90,6 +90,8 @@ export async function middleware(request: NextRequest) {
 
   return response;
 }
+
+export const middleware = proxy;
 
 export const config = {
   matcher: [

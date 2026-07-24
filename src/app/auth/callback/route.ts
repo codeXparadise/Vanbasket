@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const redirect = requestUrl.searchParams.get("redirect") || "/";
 
   if (code) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       // Check if user profile is complete

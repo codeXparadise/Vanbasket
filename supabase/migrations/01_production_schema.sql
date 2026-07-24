@@ -1,0 +1,505 @@
+-- ====================================================================
+-- VAN BASKET: MASTER PRODUCTION DATABASE SCHEMA (01_production_schema.sql)
+-- ====================================================================
+-- Execute this file in Supabase Dashboard -> SQL Editor to initialize
+-- the full, clean, production-ready schema.
+-- ====================================================================
+
+-- 0. Required Extensions
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Helper Function: Update updated_at timestamp automatically
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ====================================================================
+-- SECTION 1: CORE TABLES & TRIGGERS
+-- ====================================================================
+
+-- 1. PROFILES Table (Extends auth.users 1:1)
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name TEXT,
+    email TEXT UNIQUE,
+    phone TEXT,
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Trigger Function: Auto-create profile row on user signup & protect admin emails
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+    existing_admin_count INT;
+BEGIN
+    -- Prevent users from registering customer accounts with an email assigned as Admin
+    SELECT COUNT(*) INTO existing_admin_count
+    FROM public.profiles
+    WHERE email = LOWER(NEW.email) AND role = 'admin';
+
+    IF existing_admin_count > 0 THEN
+        RAISE EXCEPTION 'This email address (%) is already assigned as an Administrator. Administrator credentials cannot be registered or used for regular customer accounts.', NEW.email;
+    END IF;
+
+    INSERT INTO public.profiles (id, full_name, email, phone, role)
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
+        LOWER(NEW.email),
+        NEW.phone,
+        'user'
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        full_name = EXCLUDED.full_name,
+        phone = COALESCE(EXCLUDED.phone, public.profiles.phone);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger for auth.users
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Trigger for updating profile timestamps
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
+CREATE TRIGGER update_profiles_updated_at
+    BEFORE UPDATE ON public.profiles
+    FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- Admin Helper Function
+CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = user_id AND role = 'admin'
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 2. ADDRESSES Table
+CREATE TABLE IF NOT EXISTS public.addresses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    label TEXT,
+    line1 TEXT NOT NULL,
+    line2 TEXT,
+    city TEXT NOT NULL,
+    state TEXT NOT NULL,
+    postal_code TEXT NOT NULL,
+    country TEXT NOT NULL DEFAULT 'IN',
+    phone TEXT NOT NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3. PRODUCTS Table
+CREATE TABLE IF NOT EXISTS public.products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    description TEXT,
+    base_price NUMERIC(10,2) NOT NULL CHECK (base_price >= 0),
+    compare_at_price NUMERIC(10,2) DEFAULT 0 CHECK (compare_at_price >= 0),
+    currency TEXT NOT NULL DEFAULT 'INR',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    seo_title TEXT,
+    seo_description TEXT,
+    seo_keywords TEXT[] DEFAULT '{}',
+    seo_tags TEXT[] DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS update_products_updated_at ON public.products;
+CREATE TRIGGER update_products_updated_at
+    BEFORE UPDATE ON public.products
+    FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- 4. PRODUCT_VARIANTS Table
+CREATE TABLE IF NOT EXISTS public.product_variants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    size_label TEXT NOT NULL,
+    price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
+    stock_qty INTEGER NOT NULL DEFAULT 0 CHECK (stock_qty >= 0),
+    low_stock_threshold INTEGER DEFAULT 5,
+    sku TEXT UNIQUE NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (product_id, size_label)
+);
+
+-- 5. PRODUCT_IMAGES Table
+CREATE TABLE IF NOT EXISTS public.product_images (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    media_type TEXT NOT NULL DEFAULT 'image' CHECK (media_type IN ('image', 'video')),
+    display_order INTEGER NOT NULL DEFAULT 0,
+    alt_text TEXT
+);
+
+-- 6. ORDERS Table
+CREATE TABLE IF NOT EXISTS public.orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    order_number TEXT UNIQUE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'pending_cod', 'paid', 'failed', 'shipped', 'delivered', 'cancelled', 'refunded')),
+    subtotal NUMERIC(10,2) NOT NULL,
+    shipping_fee NUMERIC(10,2) NOT NULL DEFAULT 0,
+    coupon_code TEXT,
+    discount_amount NUMERIC(10,2) DEFAULT 0,
+    total_amount NUMERIC(10,2) NOT NULL CHECK (total_amount >= 0),
+    currency TEXT NOT NULL DEFAULT 'INR',
+    shipping_address_id UUID REFERENCES public.addresses(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Ensure existing database constraint updates if table already exists
+ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_status_check;
+ALTER TABLE public.orders ADD CONSTRAINT orders_status_check CHECK (status IN ('pending', 'pending_cod', 'paid', 'failed', 'shipped', 'delivered', 'cancelled', 'refunded'));
+
+DROP TRIGGER IF EXISTS update_orders_updated_at ON public.orders;
+CREATE TRIGGER update_orders_updated_at
+    BEFORE UPDATE ON public.orders
+    FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- 7. ORDER_ITEMS Table
+CREATE TABLE IF NOT EXISTS public.order_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    variant_id UUID REFERENCES public.product_variants(id) ON DELETE SET NULL,
+    product_name_snapshot TEXT NOT NULL,
+    variant_label_snapshot TEXT NOT NULL,
+    unit_price NUMERIC(10,2) NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    line_total NUMERIC(10,2) NOT NULL
+);
+
+-- 8. PAYMENTS Table
+CREATE TABLE IF NOT EXISTS public.payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    gateway TEXT NOT NULL CHECK (gateway IN ('razorpay', 'stripe', 'cod', 'cash_on_delivery')),
+    gateway_order_id TEXT,
+    gateway_payment_id TEXT,
+    status TEXT NOT NULL DEFAULT 'created' CHECK (status IN ('created', 'authorized', 'captured', 'failed', 'refunded', 'pending_cod')),
+    amount NUMERIC(10,2) NOT NULL,
+    currency TEXT NOT NULL,
+    method TEXT,
+    raw_webhook_payload JSONB,
+    verified_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (gateway, gateway_payment_id)
+);
+
+-- Ensure existing database constraints update if table already exists
+ALTER TABLE public.payments DROP CONSTRAINT IF EXISTS payments_gateway_check;
+ALTER TABLE public.payments ADD CONSTRAINT payments_gateway_check CHECK (gateway IN ('razorpay', 'stripe', 'cod', 'cash_on_delivery'));
+ALTER TABLE public.payments DROP CONSTRAINT IF EXISTS payments_status_check;
+ALTER TABLE public.payments ADD CONSTRAINT payments_status_check CHECK (status IN ('created', 'authorized', 'captured', 'failed', 'refunded', 'pending_cod'));
+
+-- 9. WEBHOOK_EVENTS Table
+CREATE TABLE IF NOT EXISTS public.webhook_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    gateway TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    event_id TEXT NOT NULL,
+    payload JSONB NOT NULL,
+    processed BOOLEAN NOT NULL DEFAULT FALSE,
+    received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (gateway, event_id)
+);
+
+-- 10. COUPONS Table
+CREATE TABLE IF NOT EXISTS public.coupons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code TEXT UNIQUE NOT NULL,
+    discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+    discount_value NUMERIC(10,2) NOT NULL CHECK (discount_value >= 0),
+    min_order_amount NUMERIC(10,2) DEFAULT 0 CHECK (min_order_amount >= 0),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ
+);
+
+-- 11. CONTACT_QUERIES Table
+CREATE TABLE IF NOT EXISTS public.contact_queries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT,
+    subject TEXT,
+    message TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'unread' CHECK (status IN ('unread', 'read', 'archived')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 12. PASSWORD_RESETS Table
+CREATE TABLE IF NOT EXISTS public.password_resets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    token TEXT UNIQUE NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Realtime Setup for Admin Notifications
+DO $$
+BEGIN
+  IF to_regclass('public.contact_queries') IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1 FROM pg_publication_tables
+       WHERE pubname = 'supabase_realtime'
+         AND schemaname = 'public'
+         AND tablename = 'contact_queries'
+     ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.contact_queries;
+  END IF;
+END $$;
+
+-- 13. ADMIN USER VIEW (Aggregation for Admin Users Page)
+CREATE OR REPLACE VIEW public.admin_user_view AS
+SELECT 
+    p.id,
+    p.full_name,
+    p.email,
+    p.phone,
+    p.role,
+    p.created_at,
+    COALESCE(COUNT(DISTINCT o.id), 0) AS total_orders,
+    COALESCE(SUM(o.total_amount), 0) AS total_spent
+FROM public.profiles p
+LEFT JOIN public.orders o ON o.user_id = p.id AND o.status IN ('paid', 'shipped', 'delivered')
+GROUP BY p.id, p.full_name, p.email, p.phone, p.role, p.created_at;
+
+-- ====================================================================
+-- SECTION 2: INDEXES FOR OPTIMAL PERFORMANCE
+-- ====================================================================
+CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
+CREATE INDEX IF NOT EXISTS idx_addresses_user_id ON public.addresses(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON public.orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders(status);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_order_id ON public.payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_gateway_payment_id ON public.payments(gateway_payment_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_gateway_event_id ON public.webhook_events(gateway, event_id);
+CREATE INDEX IF NOT EXISTS idx_password_resets_token ON public.password_resets(token);
+CREATE INDEX IF NOT EXISTS idx_password_resets_email ON public.password_resets(email);
+
+-- ====================================================================
+-- SECTION 3: ROW LEVEL SECURITY (RLS) POLICIES
+-- ====================================================================
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.addresses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_variants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_queries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.password_resets ENABLE ROW LEVEL SECURITY;
+
+-- Profiles Policies
+DROP POLICY IF EXISTS "Allow users to view own profile" ON public.profiles;
+CREATE POLICY "Allow users to view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id OR public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Allow users to update own profile" ON public.profiles;
+CREATE POLICY "Allow users to update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id OR public.is_admin(auth.uid()));
+
+-- Addresses Policies
+DROP POLICY IF EXISTS "Allow users to view own addresses" ON public.addresses;
+CREATE POLICY "Allow users to view own addresses" ON public.addresses FOR SELECT USING (auth.uid() = user_id OR public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Allow users to insert own addresses" ON public.addresses;
+CREATE POLICY "Allow users to insert own addresses" ON public.addresses FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Allow users to update own addresses" ON public.addresses;
+CREATE POLICY "Allow users to update own addresses" ON public.addresses FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Allow users to delete own addresses" ON public.addresses;
+CREATE POLICY "Allow users to delete own addresses" ON public.addresses FOR DELETE USING (auth.uid() = user_id);
+
+-- Catalog Public Read Policies
+DROP POLICY IF EXISTS "Allow public read access to products" ON public.products;
+CREATE POLICY "Allow public read access to products" ON public.products FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS "Allow public read access to product_variants" ON public.product_variants;
+CREATE POLICY "Allow public read access to product_variants" ON public.product_variants FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS "Allow public read access to product_images" ON public.product_images;
+CREATE POLICY "Allow public read access to product_images" ON public.product_images FOR SELECT USING (TRUE);
+
+-- Orders Policies
+DROP POLICY IF EXISTS "Allow users to view own orders" ON public.orders;
+CREATE POLICY "Allow users to view own orders" ON public.orders FOR SELECT USING (auth.uid() = user_id OR public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Allow admin update orders" ON public.orders;
+CREATE POLICY "Allow admin update orders" ON public.orders FOR UPDATE USING (public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Allow users to view own order items" ON public.order_items;
+CREATE POLICY "Allow users to view own order items" ON public.order_items FOR SELECT USING (
+    EXISTS (
+        SELECT 1 FROM public.orders
+        WHERE public.orders.id = public.order_items.order_id
+        AND public.orders.user_id = auth.uid()
+    ) OR public.is_admin(auth.uid())
+);
+
+-- Payments Policy
+DROP POLICY IF EXISTS "Allow admin select payments" ON public.payments;
+CREATE POLICY "Allow admin select payments" ON public.payments FOR SELECT USING (public.is_admin(auth.uid()));
+
+-- Coupons Policies
+DROP POLICY IF EXISTS "Allow public read access to active coupons" ON public.coupons;
+CREATE POLICY "Allow public read access to active coupons" ON public.coupons FOR SELECT USING (is_active = TRUE AND (expires_at IS NULL OR expires_at > NOW()));
+
+DROP POLICY IF EXISTS "Allow admin manage coupons" ON public.coupons;
+CREATE POLICY "Allow admin manage coupons" ON public.coupons FOR ALL USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+
+-- Contact Queries Policies
+DROP POLICY IF EXISTS "Allow public to insert contact queries" ON public.contact_queries;
+CREATE POLICY "Allow public to insert contact queries" ON public.contact_queries FOR INSERT WITH CHECK (TRUE);
+
+DROP POLICY IF EXISTS "Allow admin to select contact queries" ON public.contact_queries;
+CREATE POLICY "Allow admin to select contact queries" ON public.contact_queries FOR SELECT USING (public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Allow admin to update contact queries" ON public.contact_queries;
+CREATE POLICY "Allow admin to update contact queries" ON public.contact_queries FOR UPDATE USING (public.is_admin(auth.uid()));
+
+-- ====================================================================
+-- SECTION 4: SEED CATALOG DATA
+-- ====================================================================
+
+INSERT INTO public.products (
+    id, name, slug, description, base_price, compare_at_price, currency, is_active
+) VALUES (
+    'd4444444-4444-4444-8444-444444444444',
+    'Van Basket Wild Forest Honey',
+    'raw-wildflower-honey',
+    'Premium Apis dorsata wild forest honey sourced from natural tree hives in the dense forests of Chhattisgarh. Multi-floral, additive-free, ethically harvested with local tribal communities, and hygienically packed.',
+    349.00, 399.00, 'INR', TRUE
+) ON CONFLICT (slug) DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, base_price = EXCLUDED.base_price, compare_at_price = EXCLUDED.compare_at_price, currency = EXCLUDED.currency, is_active = EXCLUDED.is_active;
+
+INSERT INTO public.product_variants (
+    id, product_id, size_label, price, stock_qty, low_stock_threshold, sku, is_active
+) VALUES
+    ('a1111111-1111-1111-1111-111111111111', 'd4444444-4444-4444-8444-444444444444', '250g', 349.00, 100, 5, 'VAN-HONEY-250G', TRUE),
+    ('b2222222-2222-2222-2222-222222222222', 'd4444444-4444-4444-8444-444444444444', '500g', 599.00, 100, 5, 'VAN-HONEY-500G', TRUE)
+ON CONFLICT (id) DO UPDATE SET
+    size_label = EXCLUDED.size_label, price = EXCLUDED.price, stock_qty = GREATEST(public.product_variants.stock_qty, EXCLUDED.stock_qty), sku = EXCLUDED.sku, is_active = EXCLUDED.is_active;
+
+INSERT INTO public.product_images (
+    product_id, image_url, media_type, display_order, alt_text
+) VALUES
+    ('d4444444-4444-4444-8444-444444444444', '/assets/product-jar-1.png', 'image', 1, 'Van Basket Wild Forest Honey 250g jar'),
+    ('d4444444-4444-4444-8444-444444444444', '/assets/product-jar-2.png', 'image', 2, 'Van Basket Wild Forest Honey 500g jar')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.coupons (code, discount_type, discount_value, min_order_amount)
+VALUES ('VAN10', 'percentage', 10.00, 0.00), ('HONEY50', 'fixed', 50.00, 350.00)
+ON CONFLICT (code) DO NOTHING;
+
+-- ====================================================================
+-- SECTION 5: HELPER FUNCTION FOR CREATING ADMIN USERS FROM DASHBOARD
+-- ====================================================================
+-- Usage in Supabase SQL Editor:
+-- SELECT public.create_new_admin('admin@vanbasket.com', 'YourPassword123!', 'Admin Name', '+919876543210');
+-- ====================================================================
+
+CREATE OR REPLACE FUNCTION public.create_new_admin(
+    p_email TEXT,
+    p_password TEXT,
+    p_full_name TEXT DEFAULT 'Admin Partner',
+    p_phone TEXT DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+    new_user_id UUID;
+    clean_email TEXT;
+BEGIN
+    clean_email := LOWER(TRIM(p_email));
+
+    IF LENGTH(p_password) < 6 THEN
+        RAISE EXCEPTION 'Password must be at least 6 characters long.';
+    END IF;
+
+    -- Generate a new user UUID
+    new_user_id := gen_random_uuid();
+
+    -- Check if user already exists in auth.users
+    IF EXISTS (SELECT 1 FROM auth.users WHERE email = clean_email) THEN
+        -- If user exists, update their password and promote to admin
+        SELECT id INTO new_user_id FROM auth.users WHERE email = clean_email;
+
+        UPDATE auth.users
+        SET encrypted_password = crypt(p_password, gen_salt('bf')),
+            updated_at = NOW(),
+            email_confirmed_at = COALESCE(email_confirmed_at, NOW())
+        WHERE id = new_user_id;
+
+        INSERT INTO public.profiles (id, full_name, email, phone, role)
+        VALUES (new_user_id, p_full_name, clean_email, p_phone, 'admin')
+        ON CONFLICT (id) DO UPDATE SET
+            role = 'admin',
+            full_name = EXCLUDED.full_name,
+            phone = COALESCE(EXCLUDED.phone, public.profiles.phone);
+
+        RAISE NOTICE 'Existing user % updated with new password and promoted to Admin.', clean_email;
+        RETURN new_user_id;
+    END IF;
+
+    -- Insert into Supabase auth.users table directly with bcrypt hashed password
+    INSERT INTO auth.users (
+        instance_id,
+        id,
+        aud,
+        role,
+        email,
+        encrypted_password,
+        email_confirmed_at,
+        raw_app_meta_data,
+        raw_user_meta_data,
+        created_at,
+        updated_at
+    ) VALUES (
+        '00000000-0000-0000-0000-000000000000',
+        new_user_id,
+        'authenticated',
+        'authenticated',
+        clean_email,
+        crypt(p_password, gen_salt('bf')),
+        NOW(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        jsonb_build_object('full_name', p_full_name),
+        NOW(),
+        NOW()
+    );
+
+    -- Insert/Upsert into public.profiles with role='admin'
+    INSERT INTO public.profiles (id, full_name, email, phone, role)
+    VALUES (new_user_id, p_full_name, clean_email, p_phone, 'admin')
+    ON CONFLICT (id) DO UPDATE SET
+        role = 'admin',
+        full_name = EXCLUDED.full_name,
+        phone = COALESCE(EXCLUDED.phone, public.profiles.phone);
+
+    RAISE NOTICE 'New Admin % successfully created with ID %', clean_email, new_user_id;
+    RETURN new_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

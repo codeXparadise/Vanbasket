@@ -2,13 +2,19 @@ import type { Metadata } from "next";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vanbasket.com";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { id: string };
+type LayoutProps = {
+  children: React.ReactNode;
+  params: Promise<{ id: string }> | { id: string };
+};
+
+export async function generateMetadata(props: {
+  params: Promise<{ id: string }> | { id: string };
 }): Promise<Metadata> {
-  const isBulk = params.id === "bulk-honey";
-  const isJamun = params.id === "jamun-pulp";
+  const resolvedParams = await props.params;
+  const id = resolvedParams?.id || "";
+
+  const isBulk = id === "bulk-honey";
+  const isJamun = id === "jamun-pulp";
 
   const title = isBulk
     ? "Bulk Order Pure Wild Forest Honey | Wholesale VanBasket"
@@ -30,12 +36,12 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `${siteUrl}/catalogue/${params.id}`,
+      canonical: `${siteUrl}/catalogue/${id}`,
     },
     openGraph: {
       title,
       description,
-      url: `${siteUrl}/catalogue/${params.id}`,
+      url: `${siteUrl}/catalogue/${id}`,
       type: "website",
       images: [
         {
@@ -55,15 +61,12 @@ export async function generateMetadata({
   };
 }
 
-export default function ProductDetailLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { id: string };
-}) {
-  const isBulk = params.id === "bulk-honey";
-  const isJamun = params.id === "jamun-pulp";
+export default async function ProductDetailLayout(props: LayoutProps) {
+  const resolvedParams = await props.params;
+  const id = resolvedParams?.id || "";
+
+  const isBulk = id === "bulk-honey";
+  const isJamun = id === "jamun-pulp";
 
   const productName = isBulk
     ? "Bulk Order Pure Wild Forest Honey"
@@ -89,15 +92,15 @@ export default function ProductDetailLayout({
     name: productName,
     image: [productImage],
     description: productDescription,
-    sku: `VAN-PROD-${params.id.toUpperCase()}`,
-    mpn: `VAN-MPN-${params.id.toUpperCase()}`,
+    sku: `VAN-PROD-${id.toUpperCase()}`,
+    mpn: `VAN-MPN-${id.toUpperCase()}`,
     brand: {
       "@type": "Brand",
       name: "VanBasket",
     },
     offers: {
       "@type": "Offer",
-      url: `${siteUrl}/catalogue/${params.id}`,
+      url: `${siteUrl}/catalogue/${id}`,
       priceCurrency: "INR",
       price: price,
       priceValidUntil: "2027-12-31",
@@ -137,7 +140,7 @@ export default function ProductDetailLayout({
         "@type": "ListItem",
         position: 3,
         name: productName,
-        item: `${siteUrl}/catalogue/${params.id}`,
+        item: `${siteUrl}/catalogue/${id}`,
       },
     ],
   };
@@ -152,7 +155,7 @@ export default function ProductDetailLayout({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      {children}
+      {props.children}
     </>
   );
 }
