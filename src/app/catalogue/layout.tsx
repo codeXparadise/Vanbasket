@@ -34,7 +34,7 @@ export default function CatalogueLayout({ children }: { children: React.ReactNod
       "@type": "Offer",
       url: `${siteUrl}/catalogue`,
       priceCurrency: "INR",
-      price: "350.00",
+      price: "349.00",
       itemCondition: "https://schema.org/NewCondition",
       availability: "https://schema.org/InStock",
       seller: {

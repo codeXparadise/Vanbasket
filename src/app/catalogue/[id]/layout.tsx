@@ -81,7 +81,7 @@ export default function ProductDetailLayout({
     ? `${siteUrl}/assets/bulk-honey-new.jpg`
     : `${siteUrl}/assets/product-jar-1.png`;
 
-  const price = isBulk ? "10000.00" : isJamun ? "500.00" : "350.00";
+  const price = isBulk ? "10000.00" : isJamun ? "500.00" : "349.00";
 
   const productJsonLd = {
     "@context": "https://schema.org",

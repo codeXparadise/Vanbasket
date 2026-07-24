@@ -37,8 +37,8 @@ const staticProducts: ProductCard[] = [
     image: "/assets/product-1.jpg",
     tags: ["100% Pure Sourced", "Forest Harvested"],
     variants: [
-      { id: "a1111111-1111-1111-1111-111111111111", size_label: "250g", price: 350, stock_qty: 99, is_active: true },
-      { id: "b2222222-2222-2222-2222-222222222222", size_label: "500g", price: 699, stock_qty: 99, is_active: true },
+      { id: "a1111111-1111-1111-1111-111111111111", size_label: "250g", price: 349, stock_qty: 99, is_active: true },
+      { id: "b2222222-2222-2222-2222-222222222222", size_label: "500g", price: 599, stock_qty: 99, is_active: true },
     ],
   },
   {

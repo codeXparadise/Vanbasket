@@ -35,10 +35,18 @@ WHERE id NOT IN (
     SELECT id FROM public.profiles WHERE role = 'admin'
 );
 
--- 4. Reset stock quantities for active catalog variants to fresh defaults (100 units each)
+-- 4. Reset stock quantities and standardize exact prices (250g = ₹349, 500g = ₹599)
 UPDATE public.product_variants
 SET stock_qty = 100
 WHERE is_active = TRUE;
+
+UPDATE public.product_variants
+SET price = 349.00
+WHERE size_label = '250g';
+
+UPDATE public.product_variants
+SET price = 599.00
+WHERE size_label = '500g';
 
 -- 5. Verification & Summary Output
 DO $$

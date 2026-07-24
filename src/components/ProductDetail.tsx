@@ -58,7 +58,7 @@ const fallbackVariants: Variant[] = [
     id: "b2222222-2222-2222-2222-222222222222",
     size: "500g",
     name: "Family Reserve Jar",
-    price: 699,
+    price: 599,
     description: "Signature family jar with a deeper reserve of wild forest sweetness.",
     image: "/assets/product-jar-2.png",
     stock_qty: 99,
@@ -255,9 +255,8 @@ export const ProductDetail = () => {
                   alt={`${selectedVariant.name} product view ${index + 1}`}
                   fill
                   sizes="(min-width: 1024px) 40vw, 85vw"
-                  className={`object-contain p-8 drop-shadow-[0_15px_30px_rgba(36,27,21,0.08)] transition-all duration-700 ${
-                    slide === index ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"
-                  }`}
+                  className={`object-contain p-8 drop-shadow-[0_15px_30px_rgba(36,27,21,0.08)] transition-all duration-700 ${slide === index ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"
+                    }`}
                 />
               ))}
 
@@ -294,11 +293,10 @@ export const ProductDetail = () => {
                         setSelectedVariant(variant);
                         setSlide(0);
                       }}
-                      className={`press-pop py-2.5 text-center border rounded-xl flex flex-col justify-center items-center transition-all duration-300 ${
-                        active
+                      className={`press-pop py-2.5 text-center border rounded-xl flex flex-col justify-center items-center transition-all duration-300 ${active
                           ? "border-brand-espresso bg-brand-espresso text-brand-cream-light"
                           : "border-brand-cream-dark/60 bg-white hover:border-brand-honey text-brand-espresso"
-                      }`}
+                        }`}
                     >
                       <span className="text-xs font-bold">{variant.size}</span>
                       <span className={`text-[8px] uppercase font-semibold ${active ? "text-brand-honey" : "text-brand-espresso-muted"}`}>

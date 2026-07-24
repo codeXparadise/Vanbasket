@@ -380,7 +380,7 @@ SET size_label = '250g', price = 350.00, is_active = TRUE
 WHERE id = 'a1111111-1111-1111-1111-111111111111';
 
 UPDATE public.product_variants
-SET size_label = '500g', price = 699.00, is_active = TRUE
+SET size_label = '500g', price = 599.00, is_active = TRUE
 WHERE id = 'b2222222-2222-2222-2222-222222222222';
 
 UPDATE public.product_variants
