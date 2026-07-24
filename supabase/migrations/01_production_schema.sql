@@ -448,7 +448,7 @@ BEGIN
         SELECT id INTO new_user_id FROM auth.users WHERE email = clean_email;
 
         UPDATE auth.users
-        SET encrypted_password = crypt(p_password, gen_salt('bf')),
+        SET encrypted_password = crypt(p_password, gen_salt('bf', 10)),
             updated_at = NOW(),
             email_confirmed_at = COALESCE(email_confirmed_at, NOW())
         WHERE id = new_user_id;
@@ -464,7 +464,7 @@ BEGIN
         RETURN new_user_id;
     END IF;
 
-    -- Insert into Supabase auth.users table directly with bcrypt hashed password
+    -- Insert into Supabase auth.users table directly with bcrypt cost-10 hashed password
     INSERT INTO auth.users (
         instance_id,
         id,
@@ -483,7 +483,7 @@ BEGIN
         'authenticated',
         'authenticated',
         clean_email,
-        crypt(p_password, gen_salt('bf')),
+        crypt(p_password, gen_salt('bf', 10)),
         NOW(),
         '{"provider":"email","providers":["email"]}'::jsonb,
         jsonb_build_object('full_name', p_full_name),

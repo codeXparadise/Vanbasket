@@ -56,8 +56,8 @@ export default function AdminLoginPage() {
         router.refresh();
       }
     } catch (err: unknown) {
-      const error = err as Error;
-      setErrorMsg(error.message || "Failed to log in. Please check your credentials.");
+      const msg = typeof err === "object" && err !== null && "message" in err ? String((err as { message: string }).message) : "Failed to log in. Please check your credentials.";
+      setErrorMsg(msg || "Failed to log in. Please check your credentials.");
       setIsLoading(false);
     }
   };
