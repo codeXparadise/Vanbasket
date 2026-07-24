@@ -87,16 +87,45 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const syncAuth = async () => {
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
-      setIsAuthenticated(Boolean(data.session?.user));
+      
+      if (data.session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", data.session.user.id)
+          .maybeSingle();
+
+        if (profile?.role === "admin") {
+          setIsAuthenticated(false);
+        } else {
+          setIsAuthenticated(true);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
       setAuthReady(true);
     };
     syncAuth();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(Boolean(session?.user));
-      setAuthReady(true);
-      if (!session?.user) {
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (profile?.role === "admin") {
+          setIsAuthenticated(false);
+          setIsCartOpen(false);
+        } else {
+          setIsAuthenticated(true);
+        }
+      } else {
+        setIsAuthenticated(false);
         setIsCartOpen(false);
       }
+      setAuthReady(true);
     });
     return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, [supabase]);

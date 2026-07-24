@@ -34,7 +34,30 @@ export async function middleware(request: NextRequest) {
   // Refresh the session if expired
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Protected route enforcement — redirect unauthenticated users to login
+  // Check user role if authenticated
+  let userRole = "user";
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile?.role === "admin") {
+      userRole = "admin";
+    }
+  }
+
+  // Admin users are barred from customer user routes (/profile, /checkout, /complete-profile, /login, /signup)
+  const isCustomerRoute = PROTECTED_ROUTES.some((route) =>
+    request.nextUrl.pathname.startsWith(route)
+  ) || request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/signup");
+
+  if (user && userRole === "admin" && isCustomerRoute) {
+    return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
+  // Protected customer route enforcement — redirect unauthenticated users to login
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   );
@@ -45,41 +68,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // [FIXED] - Protect Admin Routes in Middleware
+  // Protect Admin Routes in Middleware
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login");
   if (isAdminRoute) {
-    if (!user) {
+    if (!user || userRole !== "admin") {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
-
-    // Role verification for admin routes
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (!profile || profile.role !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
   }
 
-  // Redirect logged in users away from admin login
-  if (request.nextUrl.pathname.startsWith("/admin/login") && user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profile?.role === "admin") {
-      return NextResponse.redirect(new URL("/admin", request.url));
-    }
+  // Redirect logged in admins away from admin login
+  if (request.nextUrl.pathname.startsWith("/admin/login") && user && userRole === "admin") {
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated customer users away from auth pages
   const isAuthRoute = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/signup");
-  if (isAuthRoute && user) {
+  if (isAuthRoute && user && userRole !== "admin") {
     const redirect = request.nextUrl.searchParams.get("redirect") || "/";
     return NextResponse.redirect(new URL(redirect, request.url));
   }

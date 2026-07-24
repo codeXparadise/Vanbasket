@@ -214,6 +214,18 @@ export default function ProfilePage() {
           router.push("/login?redirect=/profile");
           return;
         }
+
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", authUser.id)
+          .maybeSingle();
+
+        if (prof?.role === "admin") {
+          router.push("/admin");
+          return;
+        }
+
         setUser(authUser);
         await loadProfile(authUser.id);
       } catch {
