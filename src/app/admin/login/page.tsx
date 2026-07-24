@@ -1,21 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Lock, Mail, Loader2, AlertCircle } from "lucide-react";
-
-// [FIXED] - Add VanBasket Brand Logo & Name Everywhere
 import BrandLogo from "@/components/BrandLogo";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Auto-redirect if already logged in as admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (profile?.role === "admin") {
+          window.location.assign("/admin");
+        }
+      }
+    };
+    checkAdmin();
+  }, [supabase]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,19 +47,19 @@ export default function AdminLoginPage() {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: email.trim().toLowerCase(),
+        password: password,
       });
 
       if (error) throw error;
 
       if (data.user) {
-        // Fetch role to ensure they are admin
+        // Fetch role to ensure user has admin role
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", data.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError || !profile || profile.role !== "admin") {
           // Log out immediately if not admin
@@ -52,8 +69,8 @@ export default function AdminLoginPage() {
           return;
         }
 
-        router.push("/admin");
-        router.refresh();
+        // Synchronous full location assignment to ensure SSR cookies reach middleware
+        window.location.assign("/admin");
       }
     } catch (err: unknown) {
       const msg = typeof err === "object" && err !== null && "message" in err ? String((err as { message: string }).message) : "Failed to log in. Please check your credentials.";
