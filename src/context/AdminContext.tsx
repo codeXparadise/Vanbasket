@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 export interface Profile {
@@ -201,7 +201,7 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   // Data
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
@@ -445,49 +445,85 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
+  const contextValue = useMemo(
+    () => ({
+      loadingDashboard,
+      loadingProducts,
+      loadingOrders,
+      loadingUsers,
+      loadingQueries,
+      loadingCoupons,
+      loadingLogs,
+      isDashboardLoaded,
+      isProductsLoaded,
+      isOrdersLoaded,
+      isUsersLoaded,
+      isQueriesLoaded,
+      isCouponsLoaded,
+      isLogsLoaded,
+      dashboardStats,
+      recentOrders,
+      recentPayments,
+      recentProducts,
+      products,
+      orders,
+      users,
+      addresses,
+      queries,
+      coupons,
+      logs,
+      fetchDashboardData,
+      fetchProducts,
+      fetchOrders,
+      fetchUsers,
+      fetchQueries,
+      fetchCoupons,
+      fetchLogs,
+      setProducts,
+      setOrders,
+      setUsers,
+      setQueries,
+      setCoupons,
+      setLogs,
+    }),
+    [
+      loadingDashboard,
+      loadingProducts,
+      loadingOrders,
+      loadingUsers,
+      loadingQueries,
+      loadingCoupons,
+      loadingLogs,
+      isDashboardLoaded,
+      isProductsLoaded,
+      isOrdersLoaded,
+      isUsersLoaded,
+      isQueriesLoaded,
+      isCouponsLoaded,
+      isLogsLoaded,
+      dashboardStats,
+      recentOrders,
+      recentPayments,
+      recentProducts,
+      products,
+      orders,
+      users,
+      addresses,
+      queries,
+      coupons,
+      logs,
+      fetchDashboardData,
+      fetchProducts,
+      fetchOrders,
+      fetchUsers,
+      fetchQueries,
+      fetchCoupons,
+      fetchLogs,
+    ]
+  );
+
   return (
-    <AdminContext.Provider
-      value={{
-        loadingDashboard,
-        loadingProducts,
-        loadingOrders,
-        loadingUsers,
-        loadingQueries,
-        loadingCoupons,
-        loadingLogs,
-        isDashboardLoaded,
-        isProductsLoaded,
-        isOrdersLoaded,
-        isUsersLoaded,
-        isQueriesLoaded,
-        isCouponsLoaded,
-        isLogsLoaded,
-        dashboardStats,
-        recentOrders,
-        recentPayments,
-        recentProducts,
-        products,
-        orders,
-        users,
-        addresses,
-        queries,
-        coupons,
-        logs,
-        fetchDashboardData,
-        fetchProducts,
-        fetchOrders,
-        fetchUsers,
-        fetchQueries,
-        fetchCoupons,
-        fetchLogs,
-        setProducts,
-        setOrders,
-        setUsers,
-        setQueries,
-        setCoupons,
-        setLogs,
-      }}
-    >
+    <AdminContext.Provider value={contextValue}>
       {children}
     </AdminContext.Provider>
   );
