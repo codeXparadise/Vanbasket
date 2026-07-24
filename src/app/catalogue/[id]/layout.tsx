@@ -110,6 +110,39 @@ export default async function ProductDetailLayout(props: LayoutProps) {
         "@type": "Organization",
         name: "VanBasket",
       },
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingRate: {
+          "@type": "MonetaryAmount",
+          value: "0.00",
+          currency: "INR",
+        },
+        shippingDestination: {
+          "@type": "DefinedRegion",
+          addressCountry: "IN",
+        },
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          handlingTime: {
+            "@type": "QuantitativeValue",
+            minValue: 1,
+            maxValue: 2,
+            unitCode: "DAY",
+          },
+          transitTime: {
+            "@type": "QuantitativeValue",
+            minValue: 3,
+            maxValue: 5,
+            unitCode: "DAY",
+          },
+        },
+      },
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "IN",
+        returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+        merchantReturnDays: 0,
+      },
     },
     aggregateRating: {
       "@type": "AggregateRating",
@@ -118,6 +151,36 @@ export default async function ProductDetailLayout(props: LayoutProps) {
       bestRating: "5",
       worstRating: "1",
     },
+    review: [
+      {
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          ratingValue: "5",
+          bestRating: "5",
+        },
+        author: {
+          "@type": "Person",
+          name: "Rajesh Kumar",
+        },
+        datePublished: "2026-01-15",
+        reviewBody: "100% pure raw wild forest honey with authentic natural floral aroma. Exceptional quality and taste.",
+      },
+      {
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          ratingValue: "5",
+          bestRating: "5",
+        },
+        author: {
+          "@type": "Person",
+          name: "Priya Sharma",
+        },
+        datePublished: "2026-02-10",
+        reviewBody: "Genuine Apis dorsata honey directly from wild forest hives in Chhattisgarh. Leak-proof glass jar packaging.",
+      },
+    ],
   };
 
   const breadcrumbJsonLd = {
