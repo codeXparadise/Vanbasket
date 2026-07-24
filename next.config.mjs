@@ -26,11 +26,19 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false, // removes "X-Powered-By: Next.js" header for security
   compress: true, // Enable gzip / brotli compression for static and dynamic assets
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      '@supabase/ssr',
+      '@supabase/supabase-js',
+    ],
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000,
     deviceSizes: [320, 420, 640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    dangerouslyAllowSVG: true,
   },
   turbopack: {
     root: process.cwd(),

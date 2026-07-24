@@ -2,14 +2,18 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { Star, Quote, Play, VolumeX, Volume2, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { ProductDetail } from "@/components/ProductDetail";
 import { TrustStrip } from "@/components/TrustStrip";
-import { GeoFaqSection } from "@/components/GeoFaqSection";
-import { CartDrawer } from "@/components/CartDrawer";
 import { Footer } from "@/components/Footer";
+
+const GeoFaqSection = dynamic(
+  () => import("@/components/GeoFaqSection").then((mod) => mod.GeoFaqSection),
+  { ssr: true }
+);
 
 // Premium Review Testimonials
 const customerReviews = [
@@ -144,15 +148,15 @@ export default function Home() {
                       src={img.src}
                       alt={img.title}
                       fill
-                      sizes="224px"
+                      sizes="(max-width: 768px) 224px, 224px"
                       className="object-cover transition-transform duration-700 ease-organic group-hover:scale-105"
                     />
                   </div>
-                  <div className="space-y-0.5 pt-2">
-                    <span className="text-[7px] font-sans font-bold uppercase tracking-widest text-brand-honey block">
+                  <div className="pt-2 px-1">
+                    <span className="text-[9px] font-sans font-bold uppercase tracking-widest text-brand-terracotta block">
                       {img.label}
                     </span>
-                    <h4 className="font-serif text-[10px] font-black text-brand-espresso truncate">
+                    <h4 className="text-xs font-serif font-bold text-brand-espresso truncate">
                       {img.title}
                     </h4>
                   </div>
@@ -162,44 +166,50 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Reels segment: Windows has 2-grid (stacked reels + text), Android layout has only stacked reels (no text, space-saving) */}
-        <section className="py-20 bg-gradient-to-b from-[#faf6ee] to-[#f5ebd8]/40 border-b border-brand-cream-dark/40 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6 md:px-12">
+        {/* Video Reels Section (Interactive Harvest Chronicles) */}
+        <section className="py-16 md:py-24 border-b border-brand-cream-dark/30 bg-brand-cream-light">
+          <div className="mx-auto max-w-7xl px-6 md:px-12">
             
-            {/* Grid Layout: Responsive 2-grid for Desktop, Single Column for Android/Mobile */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-              
-              {/* Grid 1: Stacked swiping video card (Occupies 1 col on mobile grid-cols-1, 6 cols on desktop md:grid-cols-12) */}
-              <div className="col-span-1 md:col-span-6 flex flex-col items-center justify-center relative mx-auto w-full">
+
+              {/* Grid 1: Video Card Stack (Centered Mobile Layout) */}
+              <div className="md:col-span-6 relative flex flex-col items-center justify-center">
                 
-                {/* Compact sound indicator & trigger */}
-                <div className="w-full max-w-[280px] flex items-center justify-between mb-4 px-2">
-                  <span className="text-[8px] font-sans font-bold uppercase tracking-[0.25em] text-brand-honey">
-                    Swipe Preview
-                  </span>
+                {/* Audio Mute/Unmute Floating Button Header */}
+                <div className="w-full flex justify-between items-center mb-6 max-w-[310px] sm:max-w-[340px]">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-brand-terracotta animate-pulse" />
+                    <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-brand-espresso">
+                      Live Harvest Footage
+                    </span>
+                  </div>
+
                   <button
                     onClick={toggleMute}
-                    className="text-[9px] font-sans font-semibold text-brand-espresso/60 hover:text-brand-honey flex items-center gap-1.5"
+                    className="press-pop inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-espresso text-brand-cream-light text-[9px] font-bold uppercase tracking-wider hover:bg-brand-honey hover:text-brand-espresso transition-colors"
                   >
-                    {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                    {muted ? "Muted" : "Sound On"}
+                    {muted ? (
+                      <>
+                        <VolumeX className="w-3.5 h-3.5 text-brand-honey" />
+                        <span>Unmute</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3.5 h-3.5 text-brand-honey" />
+                        <span>Muted</span>
+                      </>
+                    )}
                   </button>
                 </div>
 
-                {/* Stacked Cards Container */}
-                <div className="relative w-full max-w-[280px] aspect-[9/16] perspective-card">
+                {/* Stack Container */}
+                <div className="relative w-full max-w-[310px] sm:max-w-[340px] aspect-[9/16] flex items-center justify-center">
                   {reelsData.map((reel, index) => {
-                    // Compute positions relative to active index
-                    let offset = index - activeReelIndex;
-                    if (offset < 0) offset += reelsData.length;
-
-                    // Only render active card and background layers
-                    if (offset > 2) return null;
-
+                    const offset = (index - activeReelIndex + reelsData.length) % reelsData.length;
                     const isActive = offset === 0;
                     const isSwipeAnimating = isActive && swipeTrigger;
 
-                    // Layered Stack Styles - compact offsets for perfect mobile centering
+                    // Layered Stack Styles
                     const scale = 1 - offset * 0.05;
                     const rotate = offset * 3;
                     const translateY = offset * 12;
@@ -236,7 +246,7 @@ export default function Home() {
                           src={reel.src}
                           loop
                           muted={muted}
-                          preload={isActive ? "auto" : "metadata"}
+                          preload={isActive ? "metadata" : "none"}
                           playsInline
                           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                         />
@@ -281,7 +291,7 @@ export default function Home() {
 
               </div>
 
-              {/* Grid 2: Text Info - Visible ONLY on Windows/Desktop (col-span-6), Hidden on Android/Mobile */}
+              {/* Grid 2: Text Info */}
               <div className="md:col-span-6 space-y-6">
                 <span className="text-[10px] font-sans font-bold uppercase tracking-[0.3em] text-brand-honey block">
                   Interactive Chronicles
@@ -300,7 +310,14 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex gap-2 pt-2">
-                  {reelsData.map((reel, index) => <button key={reel.id} onClick={() => setActiveReelIndex(index)} aria-label={`Show ${reel.title}`} className={`h-1.5 transition-all ${index === activeReelIndex ? "w-10 bg-brand-honey" : "w-4 bg-brand-cream-dark"}`} />)}
+                  {reelsData.map((reel, index) => (
+                    <button
+                      key={reel.id}
+                      onClick={() => setActiveReelIndex(index)}
+                      aria-label={`Show ${reel.title}`}
+                      className={`h-1.5 transition-all ${index === activeReelIndex ? "w-10 bg-brand-honey" : "w-4 bg-brand-cream-dark"}`}
+                    />
+                  ))}
                 </div>
               </div>
 
@@ -309,7 +326,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 4 Specifications Grids Section - placed right under the video/reels section */}
+        {/* Specifications Grids Section */}
         <TrustStrip />
 
         {/* Product Details & Checkout Section */}
@@ -317,68 +334,60 @@ export default function Home() {
           <ProductDetail />
         </section>
 
-        {/* Page Break Divider 2 */}
-        <div className="relative w-full h-12 bg-white/20 flex items-center justify-center overflow-hidden">
-          <div className="w-full max-w-7xl px-6 md:px-12 flex items-center gap-4">
-            <div className="flex-grow h-[1px] bg-brand-cream-dark/50" />
-            <div className="w-1.5 h-1.5 rounded-full bg-brand-honey" />
-            <div className="flex-grow h-[1px] bg-brand-cream-dark/40" />
-          </div>
-        </div>
-
-        {/* Customer Testimonials & Reviews Grid */}
-        <section className="py-20 bg-[#faf6ee]/50 backdrop-blur-sm border-b border-brand-cream-dark/40">
-          <div className="max-w-7xl mx-auto px-6 md:px-12">
-            <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
-              <span className="text-[10px] font-sans font-bold uppercase tracking-[0.25em] text-brand-honey block">
-                Client Reviews
+        {/* Customer Testimonials Section */}
+        <section className="py-20 md:py-28 bg-brand-cream-warm/20 border-b border-brand-cream-dark/30">
+          <div className="mx-auto max-w-7xl px-6 md:px-12 space-y-12">
+            
+            <div className="text-center max-w-2xl mx-auto space-y-3">
+              <span className="text-[10px] font-sans font-bold uppercase tracking-[0.3em] text-brand-terracotta block">
+                Verified Customer Voices
               </span>
-              <h2 className="font-serif text-3xl md:text-4xl font-black">
-                Loved by Honey Connoisseurs
+              <h2 className="font-serif text-3xl md:text-5xl font-black text-brand-espresso">
+                Loved across India.
               </h2>
+              <p className="text-xs sm:text-sm text-brand-espresso-muted font-light">
+                Discover authentic feedback from health enthusiasts, ayurvedic practitioners, and families who enjoy our pure wild honey daily.
+              </p>
             </div>
 
-            {/* Fully responsive layout: Column flex on mobile, Grid on desktop */}
-            <div className="flex flex-col gap-6 md:grid md:grid-cols-3 md:gap-8 w-full">
-              {customerReviews.map((review, idx) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {customerReviews.map((rev, index) => (
                 <div
-                  key={idx}
-                  className="bg-brand-cream-light/35 border border-brand-cream-dark/60 rounded-[2.5rem] p-6 md:p-8 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow duration-300 relative group w-full"
+                  key={index}
+                  className="bg-white border border-brand-cream-dark/60 rounded-3xl p-8 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-md transition-shadow"
                 >
-                  <Quote className="absolute top-6 right-8 w-8 h-8 text-brand-honey/10 group-hover:text-brand-honey/20 transition-colors duration-300" />
-                  
                   <div className="space-y-4">
-                    <div className="flex items-center gap-1">
-                      {[...Array(review.rating)].map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-brand-honey text-brand-honey" />
-                      ))}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-brand-honey">
+                        {[...Array(rev.rating)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-brand-honey text-brand-honey" />
+                        ))}
+                      </div>
+                      <Quote className="w-6 h-6 text-brand-cream-dark/40" />
                     </div>
-                    <p className="font-sans text-xs text-brand-espresso-muted leading-relaxed font-light italic">
-                      &ldquo;{review.text}&rdquo;
+                    <p className="text-xs sm:text-sm text-brand-espresso leading-relaxed italic font-serif">
+                      "{rev.text}"
                     </p>
                   </div>
 
-                  <div className="pt-6 mt-6 border-t border-brand-cream-dark/40 flex items-center justify-between">
+                  <div className="pt-4 border-t border-brand-cream-dark/30 flex items-center justify-between text-xs">
                     <div>
-                      <h4 className="font-serif text-xs font-bold text-brand-espresso">{review.name}</h4>
-                      <p className="text-[8px] text-brand-espresso-muted font-sans uppercase tracking-wider font-semibold mt-0.5">
-                        {review.location}
-                      </p>
+                      <h4 className="font-bold text-brand-espresso">{rev.name}</h4>
+                      <span className="text-[10px] text-brand-espresso-muted">{rev.location}</span>
                     </div>
-                    <span className="text-[8px] font-sans text-brand-espresso-muted/65">{review.date}</span>
+                    <span className="text-[9px] text-brand-cream-dark font-sans">{rev.date}</span>
                   </div>
                 </div>
               ))}
             </div>
+
           </div>
         </section>
 
-        {/* GEO & FAQ Authenticity Section */}
+        {/* Frequently Asked Questions */}
         <GeoFaqSection />
-      </main>
 
-      {/* Global Sliding Cart Drawer */}
-      <CartDrawer />
+      </main>
 
       {/* Footer */}
       <Footer />
