@@ -88,6 +88,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (isLoginPage) return;
 
     const fetchAdminDetails = async () => {
+      if (adminEmail) return; // Cached session
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setAdminEmail(user.email || "");
@@ -214,7 +216,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {!isSidebarCollapsed && (
               <div className="flex items-center gap-2">
                 <BrandLogo width={90} height={30} showText={false} href="/admin" />
-                <span className="font-serif text-sm tracking-wider font-bold text-white">VanBasket Admin</span>
+                <span className="font-sans text-sm tracking-wide font-semibold text-white">VanBasket Admin</span>
               </div>
             )}
             <button
@@ -311,7 +313,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <header className="h-16 md:hidden bg-brand-espresso text-brand-cream-light flex items-center justify-between px-6 border-b border-brand-cream-warm/15 shrink-0 z-30">
           <div className="flex items-center gap-2">
             <BrandLogo width={70} height={24} showText={false} href="/admin" />
-            <span className="font-serif text-sm tracking-wider font-bold text-white">VanBasket Admin</span>
+            <span className="font-sans text-sm tracking-wide font-semibold text-white">VanBasket Admin</span>
           </div>
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}

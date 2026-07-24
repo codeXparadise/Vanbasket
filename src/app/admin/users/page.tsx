@@ -156,7 +156,7 @@ export default function AdminUsersPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-brand-cream-dark/45 pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-serif text-brand-espresso font-semibold">User & Customer Directory</h1>
+            <h1 className="text-3xl font-sans font-semibold tracking-tight text-brand-espresso">User & Customer Directory</h1>
             <span className="bg-brand-honey/15 text-brand-honey text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border border-brand-honey/30">
               Live Behavior Monitor
             </span>

@@ -188,7 +188,7 @@ export default function AdminOrdersPage() {
       {/* Title Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-brand-cream-dark/45 pb-6">
         <div>
-          <h1 className="text-3xl font-serif text-brand-espresso font-semibold">Orders Registry</h1>
+          <h1 className="text-3xl font-sans font-semibold tracking-tight text-brand-espresso">Orders Registry</h1>
           <p className="text-xs text-brand-espresso/60 mt-1">
             Spreadsheet-style view of all customer orders. Click any order row to show full detailed summary.
           </p>
@@ -482,7 +482,7 @@ export default function AdminOrdersPage() {
                 <span className="text-brand-espresso/60">Shipping Fee:</span>
                 <span className="font-bold">₹{(selectedOrder.shipping_fee ?? 0).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm font-serif font-black text-brand-espresso border-t border-brand-cream-light pt-2">
+              <div className="flex justify-between text-sm font-sans font-bold text-brand-espresso border-t border-brand-cream-light pt-2">
                 <span>Grand Total:</span>
                 <span>₹{selectedOrder.total_amount.toFixed(2)}</span>
               </div>
