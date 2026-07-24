@@ -95,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           .from("profiles")
           .select("full_name, role")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         if (!profile || profile.role !== "admin") {
           // Log out and redirect unauthorized users
