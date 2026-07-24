@@ -32,31 +32,20 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Trigger Function: Auto-create profile row on user signup & protect admin emails
+-- Trigger Function: Auto-create profile row on user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
-DECLARE
-    existing_admin_count INT;
 BEGIN
-    -- Prevent users from registering customer accounts with an email assigned as Admin
-    SELECT COUNT(*) INTO existing_admin_count
-    FROM public.profiles
-    WHERE email = LOWER(NEW.email) AND role = 'admin';
-
-    IF existing_admin_count > 0 THEN
-        RAISE EXCEPTION 'This email address (%) is already assigned as an Administrator. Administrator credentials cannot be registered or used for regular customer accounts.', NEW.email;
-    END IF;
-
     INSERT INTO public.profiles (id, full_name, email, phone, role)
     VALUES (
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
         LOWER(NEW.email),
         NEW.phone,
-        'user'
+        COALESCE(NEW.raw_user_meta_data->>'role', 'user')
     )
     ON CONFLICT (id) DO UPDATE SET
-        full_name = EXCLUDED.full_name,
+        full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
         phone = COALESCE(EXCLUDED.phone, public.profiles.phone);
     RETURN NEW;
 END;
