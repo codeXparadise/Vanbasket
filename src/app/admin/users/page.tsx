@@ -66,17 +66,26 @@ export default function AdminUsersPage() {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const recentSignups = customerProfiles.filter((u) => new Date(u.created_at) >= thirtyDaysAgo);
 
-    // High value / VIP (Spent > 1000 or 2+ orders)
+    const isCancelledOrder = (status?: string) => {
+      if (!status) return false;
+      const s = status.toLowerCase();
+      return s === "cancelled" || s === "refunded" || s === "failed";
+    };
+
+    // High value / VIP (Spent > 1000 or 2+ valid orders)
     const vipCustomers = customerProfiles.filter((u) => {
       const uOrders = ordersByUserMap.get(u.id) || [];
-      const totalSpent = uOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
-      return totalSpent >= 1000 || uOrders.length >= 2;
+      const validOrders = uOrders.filter((o) => !isCancelledOrder(o.status));
+      const totalSpent = validOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+      return totalSpent >= 1000 || validOrders.length >= 2;
     });
 
-    // Calculate Lifetime Value & Total Revenue from registered customers
+    // Calculate Lifetime Value & Total Revenue from registered customers (excluding cancelled/refunded)
     let totalCustomerRevenue = 0;
     orders.forEach((o) => {
-      totalCustomerRevenue += Number(o.total_amount || 0);
+      if (!isCancelledOrder(o.status)) {
+        totalCustomerRevenue += Number(o.total_amount || 0);
+      }
     });
 
     const avgLTV = activeBuyers.length > 0 ? totalCustomerRevenue / activeBuyers.length : 0;
@@ -299,7 +308,8 @@ export default function AdminUsersPage() {
         <div className="lg:col-span-7 bg-white border border-brand-cream-dark/50 rounded-3xl overflow-hidden shadow-sm divide-y divide-brand-cream-light">
           {filteredUsers.map((user) => {
             const userOrders = stats.ordersByUserMap.get(user.id) || orders.filter((o) => o.profiles?.email === user.email);
-            const totalSpent = userOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+            const validOrders = userOrders.filter((o) => o.status !== "cancelled" && o.status !== "refunded" && o.status !== "failed");
+            const totalSpent = validOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
             const isSelected = selectedUser?.id === user.id;
 
             return (
@@ -345,7 +355,7 @@ export default function AdminUsersPage() {
                 <div className="flex items-center gap-4 text-right shrink-0">
                   <div className="text-right space-y-0.5">
                     <p className="text-xs font-bold text-brand-espresso">₹{totalSpent.toFixed(2)}</p>
-                    <p className="text-[10px] text-brand-espresso/60 font-semibold">{userOrders.length} order(s)</p>
+                    <p className="text-[10px] text-brand-espresso/60 font-semibold">{validOrders.length} order(s)</p>
                     <p className="text-[9px] text-brand-espresso/45">
                       Joined: {new Date(user.created_at).toLocaleDateString()}
                     </p>
@@ -369,8 +379,9 @@ export default function AdminUsersPage() {
             (() => {
               const userAddrs = addresses.filter((addr) => addr.user_id === selectedUser.id);
               const userOrders = stats.ordersByUserMap.get(selectedUser.id) || orders.filter((o) => o.profiles?.email === selectedUser.email);
-              const totalSpent = userOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
-              const avgOrderVal = userOrders.length > 0 ? totalSpent / userOrders.length : 0;
+              const validOrders = userOrders.filter((o) => o.status !== "cancelled" && o.status !== "refunded" && o.status !== "failed");
+              const totalSpent = validOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+              const avgOrderVal = validOrders.length > 0 ? totalSpent / validOrders.length : 0;
 
               return (
                 <div className="bg-white border border-brand-cream-dark/50 rounded-3xl p-6 shadow-md space-y-6 animate-scale-in">
@@ -392,15 +403,15 @@ export default function AdminUsersPage() {
                   <div className="grid grid-cols-3 gap-2 bg-brand-cream-light/35 border border-brand-cream-dark/40 rounded-2xl p-3 text-center">
                     <div>
                       <span className="text-[9px] uppercase font-bold text-brand-espresso/50 block">Total Spend</span>
-                      <span className="text-sm font-serif font-bold text-brand-espresso">₹{totalSpent.toFixed(2)}</span>
+                      <span className="text-sm font-sans font-bold text-brand-espresso">₹{totalSpent.toFixed(2)}</span>
                     </div>
                     <div>
-                      <span className="text-[9px] uppercase font-bold text-brand-espresso/50 block">Orders</span>
-                      <span className="text-sm font-serif font-bold text-brand-espresso">{userOrders.length}</span>
+                      <span className="text-[9px] uppercase font-bold text-brand-espresso/50 block">Valid Orders</span>
+                      <span className="text-sm font-sans font-bold text-brand-espresso">{validOrders.length}</span>
                     </div>
                     <div>
                       <span className="text-[9px] uppercase font-bold text-brand-espresso/50 block">Avg Value</span>
-                      <span className="text-sm font-serif font-bold text-brand-espresso">₹{avgOrderVal.toFixed(0)}</span>
+                      <span className="text-sm font-sans font-bold text-brand-espresso">₹{avgOrderVal.toFixed(0)}</span>
                     </div>
                   </div>
 
@@ -468,34 +479,63 @@ export default function AdminUsersPage() {
                       <ShoppingBag className="w-3.5 h-3.5 text-brand-honey" /> Purchase Timeline ({userOrders.length})
                     </h4>
                     <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
-                      {userOrders.map((o) => (
-                        <div key={o.id} className="border border-brand-cream-dark/50 rounded-2xl p-3 bg-[#fcfaf7] space-y-2">
-                          <div className="flex justify-between items-center text-[10px]">
-                            <span className="font-bold text-brand-espresso font-mono">{o.order_number}</span>
-                            <span className="font-mono text-[9px] text-brand-espresso/50">{new Date(o.created_at).toLocaleDateString()}</span>
+                      {userOrders.map((o) => {
+                        const isCancelled = o.status === "cancelled" || o.status === "refunded" || o.status === "failed";
+                        return (
+                          <div
+                            key={o.id}
+                            className={`border rounded-2xl p-3 space-y-2 transition ${
+                              isCancelled
+                                ? "bg-red-50/70 border-red-200 text-red-950"
+                                : "bg-[#fcfaf7] border-brand-cream-dark/50"
+                            }`}
+                          >
+                            <div className="flex justify-between items-center text-[10px]">
+                              <span className={`font-bold font-sans ${isCancelled ? "text-red-900" : "text-brand-espresso"}`}>
+                                {o.order_number}
+                              </span>
+                              <span className="font-sans text-[9px] text-brand-espresso/50">
+                                {new Date(o.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              {o.order_items?.map((item: OrderItem, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className={`flex justify-between items-center text-[11px] ${
+                                    isCancelled ? "text-red-800/80" : "text-brand-espresso/80"
+                                  }`}
+                                >
+                                  <span className="truncate max-w-[200px]">
+                                    {item.product_name_snapshot} ({item.variant_label_snapshot || "250g"})
+                                  </span>
+                                  <span className="font-semibold text-[10px]">x{item.quantity}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex justify-between items-end pt-1 border-t border-brand-cream-dark/20">
+                              <span
+                                className={`text-[8px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${
+                                  isCancelled
+                                    ? "bg-red-100 text-red-800 border-red-300 font-extrabold"
+                                    : o.status === "paid" || o.status === "delivered"
+                                    ? "bg-green-100 text-green-800 border-green-300"
+                                    : "bg-amber-100 text-amber-800 border-amber-300"
+                                }`}
+                              >
+                                {o.status}
+                              </span>
+                              <span
+                                className={`text-xs font-bold ${
+                                  isCancelled ? "text-red-600 font-extrabold" : "text-brand-espresso"
+                                }`}
+                              >
+                                {isCancelled ? `-₹${Number(o.total_amount).toFixed(2)}` : `₹${Number(o.total_amount).toFixed(2)}`}
+                              </span>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            {o.order_items?.map((item: OrderItem, idx: number) => (
-                              <div key={idx} className="flex justify-between items-center text-[11px] text-brand-espresso/80">
-                                <span className="truncate max-w-[200px]">{item.product_name_snapshot} ({item.variant_label_snapshot || "250g"})</span>
-                                <span className="font-semibold text-[10px]">x{item.quantity}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex justify-between items-end pt-1 border-t border-brand-cream-dark/20">
-                            <span className={`text-[8px] uppercase tracking-wider font-bold px-2 py-0.5 rounded ${
-                              o.status === "paid" || o.status === "delivered"
-                                ? "bg-green-100 text-green-800"
-                                : o.status === "pending"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}>
-                              {o.status}
-                            </span>
-                            <span className="text-xs font-bold text-brand-espresso">₹{Number(o.total_amount).toFixed(2)}</span>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {userOrders.length === 0 && (
                         <p className="text-xs italic text-brand-espresso/40">No orders logged for this customer yet.</p>
                       )}

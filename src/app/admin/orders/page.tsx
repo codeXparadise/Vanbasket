@@ -312,12 +312,17 @@ export default function AdminOrdersPage() {
                       o.status === "cod_pending" ||
                       (o.payments && o.payments.length > 0 && o.payments.some((p) => p.gateway === "cod" || p.method?.toLowerCase().includes("cash") || p.gateway_payment_id?.startsWith("COD") || p.gateway_order_id?.startsWith("COD"))) ||
                       (!o.payments || o.payments.length === 0 || !o.payments.some((p) => p.gateway === "razorpay" && (p.status === "captured" || p.status === "authorized" || p.status === "AUTHORIZED" || p.status === "success")));
+                    const isCancelled = o.status === "cancelled" || o.status === "refunded" || o.status === "failed";
                     return (
                       <tr
                         key={o.id}
                         onClick={() => selectOrder(o)}
                         className={`hover:bg-brand-cream-light/10 transition-colors cursor-pointer ${
-                          isUnread ? "bg-amber-50/40 font-bold border-l-4 border-l-brand-honey" : ""
+                          isCancelled
+                            ? "bg-red-50/60 border-l-4 border-l-red-500 font-medium text-red-950"
+                            : isUnread
+                            ? "bg-amber-50/40 font-bold border-l-4 border-l-brand-honey"
+                            : ""
                         } ${isSelected ? "bg-brand-cream-warm/25 font-bold" : ""}`}
                       >
                         <td className="p-3.5 font-sans font-bold select-all">{o.order_number}</td>
@@ -343,7 +348,11 @@ export default function AdminOrdersPage() {
                           <select
                             value={o.status}
                             onChange={(e) => handleStatusChange(o.id, o.order_number, e.target.value)}
-                            className="bg-brand-cream-light/40 border border-brand-cream-dark/60 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-espresso focus:outline-none focus:border-brand-honey"
+                            className={`rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-brand-honey border ${
+                              isCancelled
+                                ? "bg-red-100 border-red-300 text-red-800 font-extrabold"
+                                : "bg-brand-cream-light/40 border-brand-cream-dark/60 text-brand-espresso"
+                            }`}
                           >
                             {ORDER_STATUS_OPTIONS.map((opt) => (
                               <option key={opt} value={opt}>
@@ -352,8 +361,8 @@ export default function AdminOrdersPage() {
                             ))}
                           </select>
                         </td>
-                        <td className="p-3.5 font-bold">
-                          ₹{o.total_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        <td className={`p-3.5 font-bold ${isCancelled ? "text-red-600 font-extrabold" : ""}`}>
+                          {isCancelled ? `-₹${o.total_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : `₹${o.total_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
                         </td>
                         <td className="p-3.5 text-center" onClick={(e) => e.stopPropagation()}>
                           <button
