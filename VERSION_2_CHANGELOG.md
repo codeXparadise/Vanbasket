@@ -1,4 +1,24 @@
-# VanBasket - Version 2.0 Release & Changelog
+# VanBasket - Release & Changelog
+
+## 🛡️ Version 2.1 Patch Release (July 25, 2026)
+
+### 1. 🔐 Supabase Auth & Refresh Token Error Fixes
+- **Middleware Refresh Token Protection**: Wrapped `supabase.auth.getUser()` in `try...catch` blocks in `src/proxy.ts`.
+- **Automatic Cookie Eviction**: On auth token expiration or `AuthApiError: Invalid Refresh Token`, invalid auth token cookies (`sb-*-auth-token`) are automatically cleared from response headers so browsers do not send stale tokens.
+- **Client Auth Resilience**: Wrapped `getUser()` and `getSession()` in `try...catch...finally` in `Navbar.tsx`, `CartContext.tsx`, `AdminLayout.tsx`, and `admin/login/page.tsx`.
+
+### 2. 🛡️ Vulnerability Patches & Security Upgrades
+- **Zero Vulnerabilities**: Upgraded `eslint` to `^9.26.0` and `brace-expansion` to `5.0.8` via `package.json` overrides.
+- **Package Lock Synchronization**: Ran `npm install` to resolve all sub-dependency locks. `npm audit` now reports **0 vulnerabilities**.
+
+### 3. 🛒 Cart Drawer Performance & Instant Opening
+- **Non-Blocking Auth Initialization**: Updated `CartContext.tsx` so `setAuthReady(true)` completes in a `finally` block without blocking cart drawer state.
+- **Global Cart Drawer**: Mounted `<CartDrawer />` globally inside `src/app/layout.tsx` for seamless cart drawer opening across all pages (including `/`).
+
+### 4. ⚙️ Admin Dashboard Stability
+- Wrapped admin layout authentication calls in `try...catch` to prevent unhandled rejection loops or layout crashes.
+
+---
 
 ## 🚀 Version 2.0 Highlights
 

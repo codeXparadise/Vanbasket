@@ -7,7 +7,6 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Check, Minus, Plus, ShieldCheck, Truck, ChevronLeft, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { CartDrawer } from "@/components/CartDrawer";
 import { useCart } from "@/context/CartContext";
 import { createClient } from "@/utils/supabase/client";
 
@@ -332,7 +331,6 @@ export default function ProductPage() {
           </div>
         </div>
       </main>
-      <CartDrawer />
       <Footer />
     </div>
   );

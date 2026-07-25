@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { CartDrawer } from "@/components/CartDrawer";
 import { useCart } from "@/context/CartContext";
 import { Check, Mail, Plus } from "lucide-react";
 
@@ -185,7 +184,6 @@ export default function CataloguePage() {
           ))}
         </div>
       </main>
-      <CartDrawer />
       <Footer />
     </div>
   );

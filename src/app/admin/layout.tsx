@@ -88,30 +88,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (isLoginPage) return;
 
     const fetchAdminDetails = async () => {
-      if (adminEmail) return; // Cached session
+      try {
+        if (adminEmail) return; // Cached session
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setAdminEmail(user.email || "");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, role")
-          .eq("id", user.id)
-          .maybeSingle();
+        const { data, error } = await supabase.auth.getUser();
+        const user = error ? null : data?.user || null;
+        if (user) {
+          setAdminEmail(user.email || "");
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, role")
+            .eq("id", user.id)
+            .maybeSingle();
 
-        if (!profile || profile.role !== "admin") {
-          // Log out and redirect unauthorized users
-          await supabase.auth.signOut();
-          router.push("/admin/login");
-          return;
-        }
+          if (!profile || profile.role !== "admin") {
+            // Log out and redirect unauthorized users
+            await supabase.auth.signOut();
+            router.push("/admin/login");
+            return;
+          }
 
-        if (profile?.full_name) {
-          setAdminName(profile.full_name);
+          if (profile?.full_name) {
+            setAdminName(profile.full_name);
+          } else {
+            setAdminName("Admin Partner");
+          }
         } else {
-          setAdminName("Admin Partner");
+          router.push("/admin/login");
         }
-      } else {
+      } catch (err) {
+        console.error("Admin fetch details error:", err);
         router.push("/admin/login");
       }
     };

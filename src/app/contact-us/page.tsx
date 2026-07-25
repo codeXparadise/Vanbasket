@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowLeft, Send, CheckCircle2, PhoneCall, ShieldCheck } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { CartDrawer } from "@/components/CartDrawer";
 import { useSearchParams } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/client";
@@ -258,7 +257,6 @@ function ContactUsContent() {
         </div>
       </main>
 
-      <CartDrawer />
       <Footer />
     </div>
   );

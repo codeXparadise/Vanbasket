@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowRight, Leaf } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { TrustStrip } from "@/components/TrustStrip";
-import { CartDrawer } from "@/components/CartDrawer";
 import { Footer } from "@/components/Footer";
 
 const chapters = [
@@ -30,5 +29,5 @@ export default function AboutUsPage() {
     <section className="max-w-6xl mx-auto px-6 md:px-12 pb-24 md:pb-36 space-y-20 md:space-y-32">{chapters.map((chapter, index) => <article key={chapter.number} className={`grid md:grid-cols-2 gap-8 md:gap-20 items-center ${index % 2 ? "md:[&>*:first-child]:order-2" : ""}`}><div className="relative aspect-[4/3] overflow-hidden bg-brand-cream-warm"><Image src={chapter.image} alt={chapter.title} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover transition-transform duration-700 hover:scale-105" /></div><div><span className="font-serif text-5xl text-brand-honey/45">{chapter.number}</span><h3 className="font-serif text-3xl md:text-5xl font-black mt-2">{chapter.title}</h3><p className="mt-5 text-sm leading-relaxed text-brand-espresso-muted">{chapter.text}</p><Link href="/catalogue" className="inline-flex items-center gap-2 mt-7 text-[10px] uppercase tracking-[.2em] font-bold editorial-underline">Explore the harvest <ArrowRight className="w-3.5 h-3.5" /></Link></div></article>)}</section>
     <section className="bg-brand-forest text-brand-cream-light py-20 md:py-28"><div className="max-w-5xl mx-auto px-6 md:px-12 grid md:grid-cols-[1fr_auto] gap-10 items-center"><div><p className="eyebrow text-brand-honey">Our promise</p><h2 className="font-serif text-4xl md:text-6xl font-black">Keep the forest in the bottle.</h2><p className="mt-5 max-w-xl text-sm leading-relaxed text-white/70">Every decision is guided by purity, traceability and respect for the communities who know this forest best.</p></div><Leaf className="w-20 h-20 text-brand-honey/70 stroke-[1]" /></div></section>
     <TrustStrip />
-  </main><CartDrawer /><Footer /></div>;
+  </main><Footer /></div>;
 }

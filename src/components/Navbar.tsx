@@ -22,41 +22,52 @@ export const Navbar = () => {
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
-      const { data: { user: u } } = await supabase.auth.getUser();
-      setUser(u);
-      if (u) {
-        // Fetch real profile details
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", u.id)
-          .maybeSingle();
-        
-        if (profile?.full_name) {
-          setProfileName(profile.full_name);
-        } else if (u.user_metadata?.full_name) {
-          setProfileName(u.user_metadata.full_name);
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        const u = error ? null : data?.user || null;
+        setUser(u);
+        if (u) {
+          // Fetch real profile details
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", u.id)
+            .maybeSingle();
+
+          if (profile?.full_name) {
+            setProfileName(profile.full_name);
+          } else if (u.user_metadata?.full_name) {
+            setProfileName(u.user_metadata.full_name);
+          }
         }
+      } catch {
+        setUser(null);
+        setProfileName("");
       }
     };
     fetchUserAndProfile();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const u = session?.user || null;
-      setUser(u);
-      if (u) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", u.id)
-          .maybeSingle();
-        
-        if (profile?.full_name) {
-          setProfileName(profile.full_name);
-        } else if (u.user_metadata?.full_name) {
-          setProfileName(u.user_metadata.full_name);
+      try {
+        const u = session?.user || null;
+        setUser(u);
+        if (u) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", u.id)
+            .maybeSingle();
+
+          if (profile?.full_name) {
+            setProfileName(profile.full_name);
+          } else if (u.user_metadata?.full_name) {
+            setProfileName(u.user_metadata.full_name);
+          }
+        } else {
+          setProfileName("");
         }
-      } else {
+      } catch {
+        setUser(null);
         setProfileName("");
       }
     });

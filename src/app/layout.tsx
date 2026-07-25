@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Outfit } from "next/font/google";
 import Script from "next/script";
 import { CartProvider } from "@/context/CartContext";
+import { CartDrawer } from "@/components/CartDrawer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
@@ -155,7 +156,10 @@ export default function RootLayout({
         </Script>
         <ErrorBoundary>
           <ToastProvider>
-            <CartProvider>{children}</CartProvider>
+            <CartProvider>
+              {children}
+              <CartDrawer />
+            </CartProvider>
           </ToastProvider>
         </ErrorBoundary>
       </body>

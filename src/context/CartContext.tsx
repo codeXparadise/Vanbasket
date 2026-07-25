@@ -85,47 +85,57 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
     const syncAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      
-      if (data.session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", data.session.user.id)
-          .maybeSingle();
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!mounted) return;
 
-        if (profile?.role === "admin") {
-          setIsAuthenticated(false);
+        if (!error && data?.session?.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", data.session.user.id)
+            .maybeSingle();
+
+          if (profile?.role === "admin") {
+            setIsAuthenticated(false);
+          } else {
+            setIsAuthenticated(true);
+          }
         } else {
-          setIsAuthenticated(true);
+          setIsAuthenticated(false);
         }
-      } else {
-        setIsAuthenticated(false);
+      } catch {
+        if (mounted) setIsAuthenticated(false);
+      } finally {
+        if (mounted) setAuthReady(true);
       }
-      setAuthReady(true);
     };
     syncAuth();
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .maybeSingle();
+      try {
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .maybeSingle();
 
-        if (profile?.role === "admin") {
+          if (profile?.role === "admin") {
+            setIsAuthenticated(false);
+            setIsCartOpen(false);
+          } else {
+            setIsAuthenticated(true);
+          }
+        } else {
           setIsAuthenticated(false);
           setIsCartOpen(false);
-        } else {
-          setIsAuthenticated(true);
         }
-      } else {
+      } catch {
         setIsAuthenticated(false);
-        setIsCartOpen(false);
+      } finally {
+        setAuthReady(true);
       }
-      setAuthReady(true);
     });
     return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, [supabase]);

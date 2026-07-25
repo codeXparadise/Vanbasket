@@ -36,19 +36,44 @@ export async function proxy(request: NextRequest) {
   );
 
   // Refresh the session if expired
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error && data?.user) {
+      user = data.user;
+    } else {
+      // Auth error or missing user (e.g. Invalid Refresh Token)
+      const allCookies = request.cookies.getAll();
+      for (const cookie of allCookies) {
+        if (cookie.name.startsWith("sb-") && cookie.name.includes("-auth-token")) {
+          response.cookies.set(cookie.name, "", { maxAge: 0, path: "/" });
+        }
+      }
+    }
+  } catch {
+    const allCookies = request.cookies.getAll();
+    for (const cookie of allCookies) {
+      if (cookie.name.startsWith("sb-") && cookie.name.includes("-auth-token")) {
+        response.cookies.set(cookie.name, "", { maxAge: 0, path: "/" });
+      }
+    }
+  }
 
   // Check user role if authenticated
   let userRole = "user";
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
 
-    if (profile?.role === "admin") {
-      userRole = "admin";
+      if (profile?.role === "admin") {
+        userRole = "admin";
+      }
+    } catch {
+      // Fallback if db query fails
     }
   }
 

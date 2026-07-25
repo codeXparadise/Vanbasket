@@ -18,17 +18,22 @@ export default function AdminLoginPage() {
   // Auto-redirect if already logged in as admin
   useEffect(() => {
     const checkAdmin = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .maybeSingle();
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        const user = error ? null : data?.user || null;
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
 
-        if (profile?.role === "admin") {
-          window.location.assign("/admin");
+          if (profile?.role === "admin") {
+            window.location.assign("/admin");
+          }
         }
+      } catch {
+        // Ignore unauthenticated or expired token errors on login page
       }
     };
     checkAdmin();
