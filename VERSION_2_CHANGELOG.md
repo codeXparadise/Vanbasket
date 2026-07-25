@@ -15,7 +15,22 @@
 - **Non-Blocking Auth Initialization**: Updated `CartContext.tsx` so `setAuthReady(true)` completes in a `finally` block without blocking cart drawer state.
 - **Global Cart Drawer**: Mounted `<CartDrawer />` globally inside `src/app/layout.tsx` for seamless cart drawer opening across all pages (including `/`).
 
-### 4. ⚙️ Admin Dashboard Stability
+### 4. 📝 Contact Form API & Submission Resilience
+- **Dedicated Server API Endpoint**: Created `src/app/api/contact/route.ts` to process contact queries safely on the server using `createServerClient`.
+- **Automatic Schema & Error Fallback**: Gracefully formats `company` and `quantity` fields into the message body so database schema differences or client-side RLS rules never block user query submissions.
+
+### 5. 🍇 Bulk Jamun Pulp Homepage Section
+- **Dedicated Commercial Section**: Added a prominent "We Also Deal in Bulk Orders of Jamun Pulp" section directly below the main product on the Homepage (`src/app/page.tsx`).
+- **Direct B2B Action Buttons**: Includes **Query Now** (redirects to `/contact-us?inquiry=jamun-pulp`), **WhatsApp Us** (`wa.me`), and **Call Hotline** (`tel:`).
+
+### 6. 📦 Catalogue Section B2B Card CTAs
+- **Enhanced Bulk Cards**: Updated **Bulk Order of Honey** and **Jamun Pulp** cards in `src/app/catalogue/page.tsx` with commercial supply information panels.
+- **Instant B2B Contact Buttons**: Integrated 3 prominent buttons on bulk cards:
+  1. **Query Now** (redirects to pre-filled contact form).
+  2. **WhatsApp** (opens direct WhatsApp chat with product name pre-populated).
+  3. **Call Us** (`tel:+917724969017`).
+
+### 7. ⚙️ Admin Dashboard Stability
 - Wrapped admin layout authentication calls in `try...catch` to prevent unhandled rejection loops or layout crashes.
 
 ---

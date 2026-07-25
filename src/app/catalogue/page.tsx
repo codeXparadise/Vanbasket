@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
-import { Check, Mail, Plus } from "lucide-react";
+import { Check, Mail, Plus, MessageSquare, Phone } from "lucide-react";
 
 interface VariantCard {
   id: string;
@@ -141,12 +141,41 @@ export default function CataloguePage() {
               {/* Interaction Details */}
               <div className="mt-8 pt-6 border-t border-brand-cream-dark/30">
                 {item.inquiryOnly ? (
-                  <Link 
-                    href={`/contact-us?inquiry=${item.id}`} 
-                    className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-honey hover:bg-brand-honey-dark text-white px-5 text-[10px] font-sans font-bold uppercase tracking-widest transition"
-                  >
-                    <Mail className="w-3.5 h-3.5" /> Inquiry for details
-                  </Link>
+                  <div className="space-y-3">
+                    <div className="rounded-2xl bg-brand-cream-light/60 border border-brand-cream-dark/40 p-3.5 text-[11px] text-brand-espresso-muted space-y-1 font-sans">
+                      <p className="font-bold text-brand-espresso uppercase text-[9px] tracking-wider">Bulk & Commercial Supply Info:</p>
+                      <p className="text-[11px] leading-tight">• Direct Forest Reserve Allocations</p>
+                      <p className="text-[11px] leading-tight">• Custom Food-Grade Buckets & Drums</p>
+                      <p className="text-[11px] leading-tight">• 100% Pure, Unadulterated Guarantee</p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Link 
+                        href={`/contact-us?inquiry=${item.id}`} 
+                        className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-honey hover:bg-brand-honey-dark text-white px-5 text-[10px] font-sans font-bold uppercase tracking-widest transition shadow-sm"
+                      >
+                        <Mail className="w-3.5 h-3.5" /> Query Now
+                      </Link>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href={`https://wa.me/917724969017?text=Hello%20Van%20Basket,%20I%20am%20interested%20in%20inquiring%20about%20${encodeURIComponent(item.name)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 text-[9px] font-sans font-bold uppercase tracking-wider transition shadow-sm"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
+                        </a>
+
+                        <a
+                          href="tel:+917724969017"
+                          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-espresso text-brand-espresso hover:bg-brand-espresso hover:text-white px-3 text-[9px] font-sans font-bold uppercase tracking-wider transition"
+                        >
+                          <Phone className="w-3.5 h-3.5" /> Call Us
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     <p className="text-[9px] font-bold uppercase tracking-widest text-brand-espresso/60">Available packages</p>

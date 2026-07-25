@@ -32,7 +32,19 @@ function ContactUsContent() {
       setFormData((prev) => ({
         ...prev,
         quantity: "bulk-wholesale",
-        message: "Hello, I am interested in placing a bulk order for van basket raw honey. Please provide pricing details.",
+        message: "Hello, I am interested in placing a bulk order for VanBasket raw honey. Please provide pricing details.",
+      }));
+    } else if (inquiryType === "jamun-pulp") {
+      setFormData((prev) => ({
+        ...prev,
+        quantity: "bulk-wholesale",
+        message: "Hello, I am interested in bulk orders of Jamun Pulp. Please share product specifications and wholesale pricing.",
+      }));
+    } else if (inquiryType === "bulk-honey") {
+      setFormData((prev) => ({
+        ...prev,
+        quantity: "bulk-wholesale",
+        message: "Hello, I am interested in bulk orders of Wild Forest Honey. Please provide bulk pricing and lead times.",
       }));
     }
   }, [searchParams]);
@@ -43,18 +55,14 @@ function ContactUsContent() {
     setErrorMsg(null);
 
     try {
-      const { error } = await supabase
-        .from("contact_queries")
-        .insert({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          company: formData.company,
-          quantity: formData.quantity,
-          message: formData.message,
-        });
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Failed to log query.");
 
       setIsSubmitted(true);
       setFormData({

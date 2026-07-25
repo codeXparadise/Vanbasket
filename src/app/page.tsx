@@ -2,8 +2,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Star, Quote, Play, VolumeX, Volume2, ChevronRight } from "lucide-react";
+import { Star, Quote, Play, VolumeX, Volume2, ChevronRight, MessageSquare, Phone, Mail, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { ProductDetail } from "@/components/ProductDetail";
@@ -332,6 +333,102 @@ export default function Home() {
         {/* Product Details & Checkout Section */}
         <section id="shop" className="border-b border-brand-cream-dark/40 bg-white/10">
           <ProductDetail />
+        </section>
+
+        {/* Bulk Jamun Pulp & Commercial Supply Section */}
+        <section className="py-20 md:py-28 bg-brand-cream-warm/40 border-b border-brand-cream-dark/40 relative overflow-hidden">
+          <div className="mx-auto max-w-7xl px-6 md:px-12">
+            <div className="bg-brand-espresso text-brand-cream-light rounded-[2.5rem] p-8 md:p-14 shadow-2xl relative overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+              
+              {/* Left Column: Visual Card & Image */}
+              <div className="lg:col-span-5 relative">
+                <div className="relative aspect-[4/3] rounded-[1.8rem] overflow-hidden bg-brand-cream-light border border-brand-cream-dark/30 shadow-lg">
+                  <Image
+                    src="/assets/post_1.jpg"
+                    alt="Jamun Pulp Bulk Sourcing"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 500px"
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-espresso/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4 text-white">
+                    <span className="text-[9px] font-sans font-bold uppercase tracking-widest bg-brand-honey text-brand-cream-light px-2.5 py-1 rounded-full">
+                      Seasonal Reserve
+                    </span>
+                    <h3 className="font-serif text-lg font-bold text-brand-cream-light mt-2">
+                      Pure Seedless Jamun Pulp
+                    </h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Information & Actions */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="space-y-3">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-brand-honey/15 border border-brand-honey/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-brand-honey">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Commercial & Wholesale Division
+                  </span>
+                  <h2 className="font-serif text-3xl md:text-5xl font-black leading-tight text-brand-cream-light">
+                    We also deal in Bulk Orders of <em className="font-normal text-brand-honey">Jamun Pulp</em>
+                  </h2>
+                  <p className="font-sans text-xs md:text-sm text-brand-cream-light/80 leading-relaxed font-light">
+                    Sourced directly from pristine forest belts, our Jamun Pulp is 100% natural, seedless, and unadulterated. Ideal for commercial beverage formulation, ayurvedic wellness brands, food processors, and large-scale catering.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <ShieldCheck className="w-4 h-4 text-brand-honey shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-white uppercase tracking-wider text-[10px]">100% Pure & Unfiltered</h4>
+                      <p className="text-[11px] text-brand-cream-light/60 mt-0.5">Zero added sugars, colorings, or chemical preservatives.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-white/5 border border-white/10">
+                    <ShieldCheck className="w-4 h-4 text-brand-honey shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-white uppercase tracking-wider text-[10px]">Custom Packaging</h4>
+                      <p className="text-[11px] text-brand-cream-light/60 mt-0.5">Available in 5kg food pails up to 50kg wholesale barrels.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3 Prominent Action Buttons */}
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  {/* Button 1: Query Now */}
+                  <Link
+                    href="/contact-us?inquiry=jamun-pulp"
+                    className="h-12 px-6 bg-brand-honey hover:bg-brand-honey-dark text-brand-cream-light font-sans font-bold uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span>Query Now</span>
+                  </Link>
+
+                  {/* Button 2: WhatsApp Chat */}
+                  <a
+                    href="https://wa.me/917724969017?text=Hello%20Van%20Basket,%20I%20want%20to%20inquire%20about%20bulk%20orders%20of%20Jamun%20Pulp"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-12 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-sans font-bold uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>WhatsApp Us</span>
+                  </a>
+
+                  {/* Button 3: Call Direct */}
+                  <a
+                    href="tel:+917724969017"
+                    className="h-12 px-6 bg-white/10 hover:bg-white/20 text-white border border-white/20 font-sans font-bold uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Phone className="w-4 h-4 text-brand-honey" />
+                    <span>Call Hotline</span>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+          </div>
         </section>
 
         {/* Customer Testimonials Section */}
