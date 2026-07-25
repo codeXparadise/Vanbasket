@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { useAdminState } from "@/context/AdminContext";
+import { useAdminState, ContactQuery } from "@/context/AdminContext";
 import {
   Loader2,
   Mail,
@@ -11,16 +11,14 @@ import {
   Trash2,
   Check,
   AlertCircle,
-  Inbox,
   Building,
-  X,
   Search,
-  Download,
-  Filter,
+  ArrowLeft,
   RefreshCw,
-  CheckCheck,
+  Eye,
+  X,
+  MessageSquare,
 } from "lucide-react";
-import { ContactQuery } from "@/context/AdminContext";
 
 function formatDateTime(isoString: string) {
   try {
@@ -47,10 +45,15 @@ export default function AdminQueriesPage() {
   const { queries, loadingQueries, isQueriesLoaded, fetchQueries, setQueries } = useAdminState();
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
-  const [selectedQuery, setSelectedQuery] = useState<ContactQuery | null>(null);
-  const [readQueryIds, setReadQueryIds] = useState<string[]>([]);
+  // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [filterDate, setFilterDate] = useState("");
+
+  // Selected Query Detail Panel
+  const [selectedQuery, setSelectedQuery] = useState<ContactQuery | null>(null);
+
+  // Read/unread tracking state
+  const [readQueryIds, setReadQueryIds] = useState<string[]>([]);
 
   useEffect(() => {
     try {
@@ -109,25 +112,24 @@ export default function AdminQueriesPage() {
     }
   };
 
-  // Real-time Search & Date Filtering Logic
+  // Filter queries based on text search and calendar date
   const filteredQueries = useMemo(() => {
     return queries.filter((q) => {
-      // 1. Text Search Filter (Name, Email, Phone, Company, Message, Quantity)
-      if (searchQuery.trim()) {
-        const term = searchQuery.toLowerCase();
+      const term = searchQuery.toLowerCase().trim();
+      if (term) {
         const matchesName = q.name?.toLowerCase().includes(term);
         const matchesEmail = q.email?.toLowerCase().includes(term);
         const matchesPhone = q.phone?.toLowerCase().includes(term);
         const matchesCompany = q.company?.toLowerCase().includes(term);
         const matchesMessage = q.message?.toLowerCase().includes(term);
         const matchesQuantity = q.quantity?.toLowerCase().includes(term);
+        const matchesId = q.id?.toLowerCase().includes(term);
 
-        if (!matchesName && !matchesEmail && !matchesPhone && !matchesCompany && !matchesMessage && !matchesQuantity) {
+        if (!matchesName && !matchesEmail && !matchesPhone && !matchesCompany && !matchesMessage && !matchesQuantity && !matchesId) {
           return false;
         }
       }
 
-      // 2. Calendar Date Filter
       if (filterDate) {
         const qDate = new Date(q.created_at);
         const qDateStr = `${qDate.getFullYear()}-${String(qDate.getMonth() + 1).padStart(2, "0")}-${String(qDate.getDate()).padStart(2, "0")}`;
@@ -140,43 +142,37 @@ export default function AdminQueriesPage() {
     });
   }, [queries, searchQuery, filterDate]);
 
-  // Export queries to CSV
   const exportToCSV = () => {
-    if (filteredQueries.length === 0) return;
-    const headers = ["ID", "Date & Time", "Name", "Email", "Phone", "Company", "Quantity/Reserve", "Status", "Message"];
+    if (!filteredQueries.length) return;
+    const headers = ["Query ID", "Date & Time", "Customer Name", "Email", "Phone", "Company", "Target Reserve/Quantity", "Status", "Message"];
     const rows = filteredQueries.map((q) => [
-      q.id,
-      formatDateTime(q.created_at),
+      `"${q.id}"`,
+      `"${formatDateTime(q.created_at)}"`,
       `"${(q.name || "").replace(/"/g, '""')}"`,
       `"${(q.email || "").replace(/"/g, '""')}"`,
       `"${(q.phone || "").replace(/"/g, '""')}"`,
       `"${(q.company || "").replace(/"/g, '""')}"`,
       `"${(q.quantity || "").replace(/"/g, '""')}"`,
-      readQueryIds.includes(q.id) ? "READ" : "UNREAD",
+      `"${readQueryIds.includes(q.id) ? "READ" : "UNREAD"}"`,
       `"${(q.message || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `VanBasket_Queries_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `queries_export_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
-
-  const unreadCount = useMemo(() => {
-    return queries.filter((q) => !readQueryIds.includes(q.id)).length;
-  }, [queries, readQueryIds]);
 
   if (loadingQueries && !isQueriesLoaded) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 text-brand-honey animate-spin mb-4" />
         <p className="text-xs uppercase tracking-widest text-brand-espresso/60 font-bold">
-          Retrieving client inquiries...
+          Loading query registry...
         </p>
       </div>
     );
@@ -184,83 +180,54 @@ export default function AdminQueriesPage() {
 
   return (
     <div className="space-y-6 animate-scale-in">
-      {/* Title & Metrics Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-cream-dark/45 pb-6">
+      {/* Header Bar matching Orders Registry */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-brand-cream-dark/45 pb-6">
         <div>
-          <h1 className="text-3xl font-serif text-brand-espresso font-semibold">User Queries & Inquiries</h1>
+          <h1 className="text-3xl font-sans font-semibold tracking-tight text-brand-espresso">Queries Registry</h1>
           <p className="text-xs text-brand-espresso/60 mt-1">
-            Structured tabular records of customer inquiries, bulk Jamun Pulp orders, and custom batch requests.
+            Spreadsheet-style view of all customer inquiries. Click any query row to show full detailed summary.
           </p>
         </div>
 
-        {/* Counter Badges */}
-        <div className="flex items-center gap-3">
-          <div className="bg-white border border-brand-cream-dark/40 rounded-2xl px-4 py-2 text-center shadow-sm">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-espresso/60 block">Total Records</span>
-            <span className="text-lg font-serif font-black text-brand-espresso">{queries.length}</span>
-          </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2 text-center shadow-sm">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">Unread</span>
-            <span className="text-lg font-serif font-black text-amber-700">{unreadCount}</span>
-          </div>
-        </div>
-      </div>
+        {/* Action Controls */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <button
+            onClick={() => fetchQueries()}
+            className="p-2.5 bg-brand-cream-warm border border-brand-cream-dark text-brand-espresso hover:bg-brand-cream-light rounded-xl transition cursor-pointer"
+            title="Reload database"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
 
-      {feedback && (
-        <div
-          className={`flex items-start gap-3 rounded-xl p-4 text-xs ${
-            feedback.type === "success"
-              ? "bg-green-50 border border-green-200 text-green-700"
-              : "bg-red-50 border border-red-200 text-red-700"
-          }`}
-        >
-          {feedback.type === "success" ? (
-            <Check className="w-4 h-4 shrink-0 mt-0.5" />
-          ) : (
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          {readQueryIds.length < queries.length && (
+            <button
+              onClick={markAllAsRead}
+              className="h-11 px-4 bg-brand-cream-warm border border-brand-cream-dark text-brand-espresso hover:bg-brand-cream-light font-bold text-xs uppercase tracking-wider rounded-xl transition shrink-0 cursor-pointer"
+            >
+              Mark All Read
+            </button>
           )}
-          <span>{feedback.msg}</span>
-        </div>
-      )}
 
-      {/* Control Bar: Search, Calendar Date Picker, Export & Actions */}
-      <div className="bg-white border border-brand-cream-dark/50 rounded-2xl p-4 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        {/* Left Side: Search & Calendar Date Filter */}
-        <div className="flex flex-wrap items-center gap-3 flex-1">
-          {/* Name/Text Search Bar */}
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="w-4 h-4 text-brand-espresso/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search by customer name, email, company, message..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-8 bg-brand-cream-light/30 border border-brand-cream-dark/40 rounded-xl text-xs text-brand-espresso placeholder:text-brand-espresso/40 focus:outline-none focus:border-brand-honey font-sans"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-espresso/40 hover:text-brand-espresso"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+          <button
+            onClick={exportToCSV}
+            className="h-11 px-4 bg-brand-espresso text-white hover:bg-brand-espresso/90 font-bold text-xs uppercase tracking-wider rounded-xl transition shrink-0 flex items-center gap-2 cursor-pointer"
+          >
+            Export CSV
+          </button>
 
-          {/* Calendar Date Filter */}
-          <div className="flex items-center gap-2 bg-brand-cream-light/30 border border-brand-cream-dark/40 rounded-xl px-3 h-10 text-xs">
-            <Calendar className="w-4 h-4 text-brand-honey shrink-0" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-espresso/60 hidden sm:inline">Date:</span>
+          {/* Calendar Date Picker */}
+          <div className="relative">
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="bg-transparent text-xs text-brand-espresso focus:outline-none font-sans cursor-pointer"
+              className="h-11 px-3 rounded-xl border border-brand-cream-dark bg-white focus:border-brand-honey focus:outline-none text-xs font-semibold text-brand-espresso cursor-pointer"
+              title="Filter by calendar date"
             />
             {filterDate && (
               <button
                 onClick={() => setFilterDate("")}
-                className="text-brand-espresso/40 hover:text-brand-espresso ml-1"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-brand-espresso/40 hover:text-brand-espresso"
                 title="Clear date filter"
               >
                 <X className="w-3.5 h-3.5" />
@@ -268,249 +235,239 @@ export default function AdminQueriesPage() {
             )}
           </div>
 
-          {(searchQuery || filterDate) && (
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setFilterDate("");
-              }}
-              className="h-10 px-3 bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-bold uppercase tracking-wider rounded-xl transition"
-            >
-              Clear Filters ({filteredQueries.length} results)
-            </button>
-          )}
-        </div>
-
-        {/* Right Side: Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => fetchQueries()}
-            className="h-10 px-3 border border-brand-cream-dark/40 hover:bg-brand-cream-light text-brand-espresso text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
-            title="Refresh queries"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              className="h-10 px-3 border border-brand-honey text-brand-honey hover:bg-brand-honey hover:text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
-            >
-              <CheckCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Mark All Read</span>
-            </button>
-          )}
-
-          <button
-            onClick={exportToCSV}
-            disabled={filteredQueries.length === 0}
-            className="h-10 px-4 bg-brand-espresso hover:bg-brand-espresso/90 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center gap-2 transition shadow-sm"
-          >
-            <Download className="w-3.5 h-3.5 text-brand-honey" />
-            <span>Export CSV</span>
-          </button>
+          {/* Search Input Bar */}
+          <div className="relative w-full md:w-72">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-brand-espresso/45">
+              <Search className="w-4 h-4" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search by ID, name, status..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-11 pl-10 pr-4 rounded-xl border border-brand-cream-dark bg-white focus:border-brand-honey focus:outline-none text-xs font-semibold text-brand-espresso"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Excel-Style Tabular Data Table */}
-      <div className="bg-white border border-brand-cream-dark/50 rounded-3xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse font-sans">
-            {/* Table Header */}
-            <thead>
-              <tr className="bg-brand-cream-light/60 border-b border-brand-cream-dark/40 text-brand-espresso font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3.5 px-4 w-16 text-center">Status</th>
-                <th className="py-3.5 px-4 w-44">Date & Time</th>
-                <th className="py-3.5 px-4 w-44">Customer Name</th>
-                <th className="py-3.5 px-4 w-52">Email / Contact</th>
-                <th className="py-3.5 px-4 w-36">Company</th>
-                <th className="py-3.5 px-4 w-36">Target Reserve</th>
-                <th className="py-3.5 px-4">Message Snippet</th>
-                <th className="py-3.5 px-4 w-20 text-center">Actions</th>
-              </tr>
-            </thead>
+      {feedback && (
+        <div
+          className={`flex items-start gap-3 rounded-xl p-4 text-xs border ${
+            feedback.type === "success"
+              ? "bg-green-50 border-green-200 text-green-700"
+              : "bg-red-50 border-red-200 text-red-700"
+          }`}
+        >
+          {feedback.type === "success" ? (
+            <Check className="w-4 h-4 shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          )}
+          <p className="font-semibold">{feedback.msg}</p>
+        </div>
+      )}
 
-            {/* Table Body */}
-            <tbody className="divide-y divide-brand-cream-dark/30">
-              {filteredQueries.map((q, idx) => {
-                const isUnread = !readQueryIds.includes(q.id);
-                return (
-                  <tr
-                    key={q.id}
-                    onClick={() => selectQuery(q)}
-                    className={`hover:bg-brand-cream-light/40 transition cursor-pointer ${
-                      isUnread
-                        ? "bg-amber-50/70 border-l-4 border-l-brand-honey font-semibold"
-                        : idx % 2 === 0
-                        ? "bg-white"
-                        : "bg-[#fcfaf7]"
-                    }`}
-                  >
-                    {/* Status Badge */}
-                    <td className="py-3 px-4 text-center">
-                      {isUnread ? (
-                        <span className="bg-brand-honey text-white text-[8px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full inline-block animate-pulse">
-                          NEW
-                        </span>
-                      ) : (
-                        <span className="bg-stone-100 text-stone-500 text-[8px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full inline-block">
-                          READ
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Date & Time */}
-                    <td className="py-3 px-4 text-brand-espresso/80 whitespace-nowrap font-mono text-[11px]">
-                      {formatDateTime(q.created_at)}
-                    </td>
-
-                    {/* Customer Name */}
-                    <td className="py-3 px-4 text-brand-espresso font-bold">
-                      {q.name}
-                    </td>
-
-                    {/* Email / Contact */}
-                    <td className="py-3 px-4 text-brand-espresso/80 space-y-0.5">
-                      <div className="truncate max-w-[180px]">{q.email}</div>
-                      {q.phone && <div className="text-[10px] text-brand-espresso/60">{q.phone}</div>}
-                    </td>
-
-                    {/* Company */}
-                    <td className="py-3 px-4 text-brand-espresso-muted">
-                      {q.company ? (
-                        <span className="font-semibold text-brand-espresso flex items-center gap-1">
-                          <Building className="w-3 h-3 text-brand-honey shrink-0 inline" />
-                          <span className="truncate max-w-[120px]">{q.company}</span>
-                        </span>
-                      ) : (
-                        <span className="text-brand-espresso/40 italic">N/A</span>
-                      )}
-                    </td>
-
-                    {/* Target Reserve / Batch */}
-                    <td className="py-3 px-4">
-                      <span className="text-[9px] font-bold uppercase tracking-wider bg-brand-cream-warm text-brand-espresso/90 px-2.5 py-1 rounded-md inline-block">
-                        {q.quantity || "General"}
-                      </span>
-                    </td>
-
-                    {/* Message Snippet */}
-                    <td className="py-3 px-4 text-brand-espresso-muted font-light">
-                      <p className="truncate max-w-xs font-sans text-xs">{q.message}</p>
-                    </td>
-
-                    {/* Delete Action Button */}
-                    <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleDelete(q.id)}
-                        className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition border border-transparent hover:border-red-200"
-                        title="Delete query log"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+      {/* Main Split Layout: Table on Left, Details Panel on Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Side: Spreadsheet Table of Queries */}
+        <div
+          className={`bg-white border border-brand-cream-dark/50 rounded-3xl overflow-hidden shadow-sm transition-all duration-300 ${
+            selectedQuery ? "lg:col-span-6 xl:col-span-7" : "lg:col-span-12"
+          } ${selectedQuery ? "hidden lg:block" : "block"}`}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-[11px] font-sans">
+              <thead>
+                <tr className="bg-brand-cream-light/30 border-b border-brand-cream-dark/30 text-brand-espresso/60 font-bold uppercase tracking-wider">
+                  <th className="p-3.5 font-semibold">QUERY NO</th>
+                  <th className="p-3.5 font-semibold">CUSTOMER</th>
+                  <th className="p-3.5 font-semibold">DATE & TIME</th>
+                  <th className="p-3.5 font-semibold">CONTACT</th>
+                  <th className="p-3.5 font-semibold">STATUS</th>
+                  <th className="p-3.5 font-semibold">QUANTITY / BATCH</th>
+                  <th className="p-3.5 font-semibold text-center">ACTION</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-cream-light font-medium text-brand-espresso">
+                {filteredQueries.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-brand-espresso/45">
+                      No matching inquiry records found.
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ) : (
+                  filteredQueries.map((q, idx) => {
+                    const isUnread = !readQueryIds.includes(q.id);
+                    const isSelected = selectedQuery?.id === q.id;
+                    const shortId = `Q-${(q.id || "").slice(0, 6).toUpperCase()}`;
 
-          {filteredQueries.length === 0 && (
-            <div className="bg-white p-12 text-center text-brand-espresso/45 italic font-bold flex flex-col items-center justify-center space-y-2">
-              <Inbox className="w-10 h-10 text-brand-cream-dark mb-1" />
-              <span>No matching query records found</span>
-              {(searchQuery || filterDate) && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setFilterDate("");
-                  }}
-                  className="text-xs text-brand-honey hover:underline not-italic font-normal"
-                >
-                  Reset search & date filters
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Query Detail Modal Drawer */}
-      {selectedQuery && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#201914]/45 backdrop-blur-sm p-4 animate-fade-in"
-          onClick={() => setSelectedQuery(null)}
-        >
-          <div
-            className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setSelectedQuery(null)}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-brand-cream-light text-brand-espresso transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="space-y-6">
-              <div>
-                <span className="text-[9px] font-sans font-bold uppercase tracking-widest bg-brand-cream-warm text-brand-espresso/80 px-2.5 py-1 rounded-md">
-                  Quantity / Batch: {selectedQuery.quantity || "General Inquiry"}
-                </span>
-                <h2 className="text-2xl font-serif text-brand-espresso font-semibold mt-4">{selectedQuery.name}</h2>
-                {selectedQuery.company && (
-                  <p className="text-xs text-brand-espresso-muted flex items-center gap-1.5 mt-1 font-semibold">
-                    <Building className="w-4 h-4 text-brand-honey" /> {selectedQuery.company}
-                  </p>
+                    return (
+                      <tr
+                        key={q.id}
+                        onClick={() => selectQuery(q)}
+                        className={`hover:bg-brand-cream-light/10 transition-colors cursor-pointer ${
+                          isUnread ? "bg-amber-50/40 font-bold border-l-4 border-l-brand-honey" : ""
+                        } ${isSelected ? "bg-brand-cream-warm/25 font-bold" : ""}`}
+                      >
+                        <td className="p-3.5 font-mono select-all font-bold">{shortId}</td>
+                        <td className="p-3.5 font-bold truncate max-w-[130px]">
+                          <div>{q.name}</div>
+                          {q.company && (
+                            <div className="text-[10px] font-normal text-brand-espresso-muted truncate flex items-center gap-1">
+                              <Building className="w-3 h-3 text-brand-honey inline shrink-0" />
+                              {q.company}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3.5 text-brand-espresso/65 whitespace-nowrap font-mono text-[10px]">
+                          {formatDateTime(q.created_at)}
+                        </td>
+                        <td className="p-3.5 text-brand-espresso/80 truncate max-w-[150px]">
+                          <div>{q.email}</div>
+                          {q.phone && <div className="text-[10px] text-brand-espresso/50 font-mono">{q.phone}</div>}
+                        </td>
+                        <td className="p-3.5">
+                          {isUnread ? (
+                            <span className="px-2.5 py-1 rounded-full text-[9px] uppercase font-extrabold tracking-wider bg-amber-100 text-amber-900 border border-amber-300 inline-block animate-pulse">
+                              UNREAD
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-[9px] uppercase font-extrabold tracking-wider bg-stone-100 text-stone-600 border border-stone-200 inline-block">
+                              READ
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3.5 font-bold">
+                          <span className="px-2 py-0.5 rounded bg-brand-cream-warm text-brand-espresso text-[9px] font-bold uppercase tracking-wider">
+                            {q.quantity || "General"}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => selectQuery(q)}
+                              className="p-1 text-brand-honey hover:text-brand-honey-dark transition cursor-pointer"
+                              title="View full query details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(q.id)}
+                              className="p-1 text-red-500 hover:text-red-700 transition cursor-pointer"
+                              title="Delete query log"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
-              </div>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-              <div className="bg-brand-cream-light/60 border border-brand-cream-dark/35 rounded-2xl p-5 text-sm leading-relaxed text-brand-espresso/90 italic font-sans font-light">
-                &ldquo;{selectedQuery.message}&rdquo;
-              </div>
+        {/* Right Side Detail Panel matching Orders Registry */}
+        {selectedQuery && (
+          <div className="bg-white border border-brand-cream-dark/50 rounded-3xl p-6 shadow-md lg:col-span-6 xl:col-span-5 space-y-6">
+            {/* Header / Back Button */}
+            <div className="flex items-center justify-between pb-4 border-b border-brand-cream-light">
+              <button
+                onClick={() => setSelectedQuery(null)}
+                className="flex items-center gap-1.5 text-xs text-brand-espresso/60 hover:text-brand-espresso font-bold transition cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back to Registry
+              </button>
 
-              <div className="space-y-2 pt-4 border-t border-brand-cream-light text-xs text-brand-espresso-muted font-sans">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-brand-honey" />
-                  <a href={`mailto:${selectedQuery.email}`} className="hover:underline font-semibold text-brand-espresso">
+              <span className="text-[10px] font-mono text-brand-espresso/50 select-all">
+                ID: {selectedQuery.id}
+              </span>
+            </div>
+
+            {/* Query Summary Header */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[9px] uppercase tracking-widest text-brand-espresso/45 font-bold">Customer Name</p>
+                <p className="text-sm font-serif font-bold text-brand-espresso mt-0.5">
+                  {selectedQuery.name}
+                </p>
+              </div>
+              <div>
+                <p className="text-[9px] uppercase tracking-widest text-brand-espresso/45 font-bold">Target Reserve / Batch</p>
+                <span className="mt-1 inline-block px-3 py-1 bg-brand-cream-warm text-brand-espresso font-bold text-xs rounded-xl uppercase tracking-wider">
+                  {selectedQuery.quantity || "General Inquiry"}
+                </span>
+              </div>
+            </div>
+
+            {/* Customer Contact Card */}
+            <div className="p-4 bg-brand-cream-light/20 rounded-2xl border border-brand-cream-light space-y-2">
+              <h4 className="text-xs uppercase tracking-wider font-extrabold text-brand-espresso/70">
+                Contact Information
+              </h4>
+              <div className="text-[11px] space-y-1.5">
+                <div className="flex items-center gap-2 text-brand-espresso">
+                  <Mail className="w-3.5 h-3.5 text-brand-honey shrink-0" />
+                  <a href={`mailto:${selectedQuery.email}`} className="font-bold hover:underline">
                     {selectedQuery.email}
                   </a>
                 </div>
                 {selectedQuery.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-brand-honey" />
-                    <a href={`tel:${selectedQuery.phone}`} className="hover:underline font-semibold text-brand-espresso">
+                  <div className="flex items-center gap-2 text-brand-espresso">
+                    <Phone className="w-3.5 h-3.5 text-brand-honey shrink-0" />
+                    <a href={`tel:${selectedQuery.phone}`} className="font-bold hover:underline font-mono">
                       {selectedQuery.phone}
                     </a>
                   </div>
                 )}
-                <div className="flex items-center gap-3 text-[10px] text-brand-espresso/50 pt-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>Submitted on {formatDateTime(selectedQuery.created_at)}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => {
-                    handleDelete(selectedQuery.id);
-                  }}
-                  className="flex-1 h-11 border border-red-200 text-red-500 hover:bg-red-50 font-bold text-xs uppercase tracking-wider rounded-xl transition"
-                >
-                  Delete Log
-                </button>
-                <button
-                  onClick={() => setSelectedQuery(null)}
-                  className="flex-1 h-11 bg-brand-espresso hover:bg-brand-espresso/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition"
-                >
-                  Close
-                </button>
+                {selectedQuery.company && (
+                  <div className="flex items-center gap-2 text-brand-espresso pt-1 border-t border-brand-cream-light">
+                    <Building className="w-3.5 h-3.5 text-brand-honey shrink-0" />
+                    <span className="font-bold">Company: {selectedQuery.company}</span>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Inquiry Message Text */}
+            <div className="space-y-2">
+              <h4 className="text-[10px] uppercase tracking-wider font-extrabold text-brand-espresso/50">
+                Inquiry Message Payload
+              </h4>
+              <div className="p-4 bg-brand-cream-light/30 border border-brand-cream-dark/30 rounded-2xl text-xs text-brand-espresso leading-relaxed font-sans font-light italic">
+                &ldquo;{selectedQuery.message}&rdquo;
+              </div>
+            </div>
+
+            {/* Timestamp & Metadata */}
+            <div className="space-y-1 text-xs border-b border-brand-cream-light pb-4">
+              <div className="flex justify-between items-center text-[10px] text-brand-espresso/60 font-mono">
+                <span>Submitted At:</span>
+                <span className="font-bold">{formatDateTime(selectedQuery.created_at)}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => handleDelete(selectedQuery.id)}
+                className="flex-1 h-11 border border-red-200 text-red-600 hover:bg-red-50 font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer"
+              >
+                Delete Inquiry
+              </button>
+              <button
+                onClick={() => setSelectedQuery(null)}
+                className="flex-1 h-11 bg-brand-espresso text-white hover:bg-brand-espresso/90 font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer"
+              >
+                Close Details
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
