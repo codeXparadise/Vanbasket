@@ -1,5 +1,29 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import fs from "fs";
+import path from "path";
+
+const BACKUP_QUERIES_FILE = path.join(process.cwd(), "src/app/api/admin/logs/queries_backup.json");
+
+// Helper to save backup queries if Supabase table does not exist
+function saveBackupQuery(query: Record<string, unknown>) {
+  try {
+    fs.mkdirSync(path.dirname(BACKUP_QUERIES_FILE), { recursive: true });
+    let existing: Record<string, unknown>[] = [];
+    if (fs.existsSync(BACKUP_QUERIES_FILE)) {
+      const data = fs.readFileSync(BACKUP_QUERIES_FILE, "utf8");
+      existing = JSON.parse(data || "[]");
+    }
+    existing.unshift({
+      id: Math.random().toString(36).substring(2, 9),
+      created_at: new Date().toISOString(),
+      ...query,
+    });
+    fs.writeFileSync(BACKUP_QUERIES_FILE, JSON.stringify(existing, null, 2));
+  } catch (err) {
+    console.error("Failed to save backup query file:", err);
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -13,9 +37,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-
-    // Format rich message content
     const formattedMessage = [
       `[Target Reserve / Batch]: ${quantity || "General"}`,
       company ? `[Company]: ${company}` : null,
@@ -28,36 +49,54 @@ export async function POST(request: Request) {
 
     const subjectText = `Inquiry: ${quantity || "General"} ${company ? `(${company})` : ""}`.trim();
 
-    // 1. First attempt: Insert using complete columns (if schema updated)
-    const { error: primaryError } = await supabase.from("contact_queries").insert({
-      name,
-      email,
-      phone: phone || null,
-      company: company || null,
-      quantity: quantity || null,
-      message: message,
-      subject: subjectText,
-    });
+    try {
+      const supabase = await createClient();
 
-    if (!primaryError) {
-      return NextResponse.json({ success: true, message: "Inquiry registered successfully." });
-    }
+      // 1. Attempt insert with full columns
+      const { error: primaryError } = await supabase.from("contact_queries").insert({
+        name,
+        email,
+        phone: phone || null,
+        company: company || null,
+        quantity: quantity || null,
+        message: message,
+        subject: subjectText,
+      });
 
-    // 2. Fallback attempt: Standard schema columns (name, email, phone, subject, message)
-    const { error: fallbackError } = await supabase.from("contact_queries").insert({
-      name,
-      email,
-      phone: phone || null,
-      subject: subjectText,
-      message: formattedMessage,
-    });
+      if (!primaryError) {
+        return NextResponse.json({ success: true, message: "Inquiry registered successfully." });
+      }
 
-    if (fallbackError) {
-      console.error("Contact inquiry submission error:", fallbackError);
+      // 2. Attempt insert with standard columns
+      const { error: fallbackError } = await supabase.from("contact_queries").insert({
+        name,
+        email,
+        phone: phone || null,
+        subject: subjectText,
+        message: formattedMessage,
+      });
+
+      if (!fallbackError) {
+        return NextResponse.json({ success: true, message: "Inquiry registered successfully." });
+      }
+
+      // If table is missing in Supabase schema cache
+      if (fallbackError.message?.includes("schema cache") || fallbackError.code === "PGRST205" || fallbackError.code === "42P01") {
+        console.warn("contact_queries table missing in Supabase DB. Saving to local backup registry...");
+        saveBackupQuery({ name, email, phone, company, quantity, message, subject: subjectText });
+        return NextResponse.json({ success: true, message: "Inquiry registered successfully." });
+      }
+
       throw fallbackError;
+    } catch (dbErr: unknown) {
+      const err = dbErr as Error;
+      if (err.message?.includes("schema cache") || (err as { code?: string }).code === "PGRST205") {
+        console.warn("contact_queries table missing. Storing in local backup file...");
+        saveBackupQuery({ name, email, phone, company, quantity, message, subject: subjectText });
+        return NextResponse.json({ success: true, message: "Inquiry registered successfully." });
+      }
+      throw dbErr;
     }
-
-    return NextResponse.json({ success: true, message: "Inquiry registered successfully." });
   } catch (err: unknown) {
     const error = err as Error;
     console.error("Failed to submit contact query:", error);
