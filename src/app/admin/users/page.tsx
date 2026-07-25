@@ -36,10 +36,9 @@ export default function AdminUsersPage() {
 
   // Calculations for Customer Analytics & Behavior Tracking
   const stats = useMemo(() => {
-    const totalUsers = users.length;
-
     // Filter non-admin customers
     const customerProfiles = users.filter((u) => u.role !== "admin");
+    const totalUsers = customerProfiles.length;
 
     // Orders linked to users
     const ordersByUserMap = new Map<string, typeof orders>();

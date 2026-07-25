@@ -307,7 +307,11 @@ export default function AdminOrdersPage() {
                   filteredOrders.map((o) => {
                     const isUnread = !readOrderIds.includes(o.id);
                     const isSelected = selectedOrder?.id === o.id;
-                    const isCod = o.status === "pending_cod" || o.status === "cod_pending" || o.payments?.some((p) => p.gateway === "cod" || p.method === "Cash on Delivery");
+                    const isCod =
+                      o.status === "pending_cod" ||
+                      o.status === "cod_pending" ||
+                      (o.payments && o.payments.length > 0 && o.payments.some((p) => p.gateway === "cod" || p.method?.toLowerCase().includes("cash") || p.gateway_payment_id?.startsWith("COD") || p.gateway_order_id?.startsWith("COD"))) ||
+                      (!o.payments || o.payments.length === 0 || !o.payments.some((p) => p.gateway === "razorpay" && (p.status === "captured" || p.status === "authorized" || p.status === "AUTHORIZED" || p.status === "success")));
                     return (
                       <tr
                         key={o.id}
@@ -324,11 +328,16 @@ export default function AdminOrdersPage() {
                           {new Date(o.created_at).toLocaleDateString()}
                         </td>
                         <td className="p-3.5">
-                          <span className={`px-2.5 py-1 rounded-full text-[9px] uppercase font-extrabold tracking-wider border ${
-                            isCod ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-blue-100 text-blue-900 border-blue-300"
-                          }`}>
-                            {isCod ? "Cash on Delivery" : "Online Payment"}
-                          </span>
+                          {isCod ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-white border border-amber-600 shadow-xs inline-flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                              COD
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-[9px] uppercase font-extrabold tracking-wider bg-sky-100 text-sky-800 border border-sky-300 inline-block">
+                              Online Payment
+                            </span>
+                          )}
                         </td>
                         <td className="p-3.5" onClick={(e) => e.stopPropagation()}>
                           <select
