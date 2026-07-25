@@ -13,21 +13,54 @@ export default function AdminQueriesPage() {
 
   const [selectedQuery, setSelectedQuery] = useState<ContactQuery | null>(null);
 
+  const [readQueryIds, setReadQueryIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const readIds = JSON.parse(localStorage.getItem("admin_read_queries") || "[]");
+      setReadQueryIds(readIds);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     fetchQueries();
   }, [fetchQueries]);
+
+  const markAsRead = (queryId: string) => {
+    setReadQueryIds((prev) => {
+      if (prev.includes(queryId)) return prev;
+      const next = [...prev, queryId];
+      localStorage.setItem("admin_read_queries", JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent("query-marked-read"));
+      return next;
+    });
+  };
+
+  const markAllAsRead = () => {
+    const allIds = queries.map((q) => q.id);
+    localStorage.setItem("admin_read_queries", JSON.stringify(allIds));
+    setReadQueryIds(allIds);
+    window.dispatchEvent(new CustomEvent("query-marked-read"));
+    setFeedback({ type: "success", msg: "All queries marked as read." });
+  };
+
+  const selectQuery = (q: ContactQuery) => {
+    setSelectedQuery(q);
+    markAsRead(q.id);
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this query log?")) return;
     setFeedback(null);
 
     try {
-      const { error } = await supabase
-        .from("contact_queries")
-        .delete()
-        .eq("id", id);
+      const response = await fetch(`/api/admin/queries?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Failed to remove inquiry log");
+
       setQueries((prev) => prev.filter((q) => q.id !== id));
       setFeedback({ type: "success", msg: "Inquiry log deleted successfully" });
       if (selectedQuery?.id === id) {
@@ -80,17 +113,26 @@ export default function AdminQueriesPage() {
       {/* Queries List Stack */}
       <div className="bg-white border border-brand-cream-dark/50 rounded-3xl overflow-hidden shadow-sm">
         <div className="divide-y divide-brand-cream-light">
-          {queries.map((q) => (
-            <div
-              key={q.id}
-              onClick={() => setSelectedQuery(q)}
-              className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-brand-cream-light/35 transition cursor-pointer group"
-            >
-              <div className="flex-grow space-y-1">
-                <div className="flex items-center gap-3">
-                  <span className="text-[8px] font-sans font-bold uppercase tracking-wider bg-brand-cream-warm text-brand-espresso/80 px-2 py-0.5 rounded">
-                    {q.quantity || "General"}
-                  </span>
+          {queries.map((q) => {
+            const isUnread = !readQueryIds.includes(q.id);
+            return (
+              <div
+                key={q.id}
+                onClick={() => selectQuery(q)}
+                className={`px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-brand-cream-light/35 transition cursor-pointer group ${
+                  isUnread ? "bg-amber-50/50 font-bold border-l-4 border-l-brand-honey" : ""
+                }`}
+              >
+                <div className="flex-grow space-y-1">
+                  <div className="flex items-center gap-3">
+                    {isUnread && (
+                      <span className="bg-brand-honey text-white text-[8px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded animate-pulse">
+                        New
+                      </span>
+                    )}
+                    <span className="text-[8px] font-sans font-bold uppercase tracking-wider bg-brand-cream-warm text-brand-espresso/80 px-2 py-0.5 rounded">
+                      {q.quantity || "General"}
+                    </span>
                   <h3 className="font-serif font-bold text-sm text-brand-espresso">
                     {q.name}
                   </h3>
@@ -122,7 +164,8 @@ export default function AdminQueriesPage() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
 
           {queries.length === 0 && (
             <div className="bg-white p-12 text-center text-brand-espresso/45 italic font-bold flex flex-col items-center justify-center">

@@ -397,20 +397,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchQueries = useCallback(async (silent = false) => {
     if (!silent) setLoadingQueries(true);
     try {
-      const { data, error } = await supabase
-        .from("contact_queries")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setQueries(data || []);
+      const response = await fetch("/api/admin/queries");
+      if (!response.ok) throw new Error("Failed to load contact queries");
+      const data = await response.json();
+      setQueries(data as ContactQuery[]);
       setIsQueriesLoaded(true);
     } catch (err) {
       console.error("Queries fetch error:", err);
     } finally {
       setLoadingQueries(false);
     }
-  }, [supabase]);
+  }, []);
 
   const fetchCoupons = useCallback(async (silent = false) => {
     if (!silent) setLoadingCoupons(true);

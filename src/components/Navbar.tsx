@@ -25,20 +25,30 @@ export const Navbar = () => {
       try {
         const { data, error } = await supabase.auth.getUser();
         const u = error ? null : data?.user || null;
-        setUser(u);
         if (u) {
-          // Fetch real profile details
+          // Fetch profile details including role check
           const { data: profile } = await supabase
             .from("profiles")
-            .select("full_name")
+            .select("full_name, role")
             .eq("id", u.id)
             .maybeSingle();
 
+          // STRICT ADMIN ISOLATION: Admins are barred from customer user state on storefront
+          if (profile?.role === "admin") {
+            setUser(null);
+            setProfileName("");
+            return;
+          }
+
+          setUser(u);
           if (profile?.full_name) {
             setProfileName(profile.full_name);
           } else if (u.user_metadata?.full_name) {
             setProfileName(u.user_metadata.full_name);
           }
+        } else {
+          setUser(null);
+          setProfileName("");
         }
       } catch {
         setUser(null);
@@ -50,20 +60,27 @@ export const Navbar = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       try {
         const u = session?.user || null;
-        setUser(u);
         if (u) {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("full_name")
+            .select("full_name, role")
             .eq("id", u.id)
             .maybeSingle();
 
+          if (profile?.role === "admin") {
+            setUser(null);
+            setProfileName("");
+            return;
+          }
+
+          setUser(u);
           if (profile?.full_name) {
             setProfileName(profile.full_name);
           } else if (u.user_metadata?.full_name) {
             setProfileName(u.user_metadata.full_name);
           }
         } else {
+          setUser(null);
           setProfileName("");
         }
       } catch {

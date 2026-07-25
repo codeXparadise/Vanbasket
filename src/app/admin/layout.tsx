@@ -29,6 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadQueriesCount, setUnreadQueriesCount] = useState(0);
   const [toasts, setToasts] = useState<{ id: string; kind: "order" | "query"; title: string; detail: string; total_amount?: number }[]>([]);
 
   const isLoginPage = pathname === "/admin/login";
@@ -52,6 +53,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       console.error("Failed to sync unread count:", err);
     }
   }, [supabase]);
+
+  const syncUnreadQueriesCount = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/queries");
+      if (response.ok) {
+        const queryData = await response.json();
+        let readIds: string[] = [];
+        try {
+          readIds = JSON.parse(localStorage.getItem("admin_read_queries") || "[]");
+        } catch {}
+
+        const unread = (queryData as { id: string }[]).filter((q) => !readIds.includes(q.id));
+        setUnreadQueriesCount(unread.length);
+      }
+    } catch (err) {
+      console.error("Failed to sync unread queries count:", err);
+    }
+  }, []);
 
   // Web Audio double-chime beep
   const playBeep = () => {
@@ -123,7 +142,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
     
     fetchAdminDetails();
+    fetchAdminDetails();
     syncUnreadCount();
+    syncUnreadQueriesCount();
 
     // Subscribe to realtime orders changes
     const channel = supabase
@@ -147,7 +168,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             },
           ]);
 
-          // Dispatch visual event to notify active pages
           window.dispatchEvent(new CustomEvent("new-order-received", { detail: newOrder }));
         }
       )
@@ -158,23 +178,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "contact_queries" }, (payload) => {
         playBeep();
         const query = payload.new as { id: string; name?: string };
+        setUnreadQueriesCount((prev) => prev + 1);
         setToasts((prev) => [...prev, { id: query.id, kind: "query", title: "New Query Received!", detail: query.name || "Contact request" }]);
       })
       .subscribe();
 
-    // Listen for custom read marks events from layout children
     const handleOrderRead = () => {
       syncUnreadCount();
     };
-    window.addEventListener("order-marked-read", handleOrderRead);
+    const handleQueryRead = () => {
+      syncUnreadQueriesCount();
+    };
 
-    // Dynamic background polling (runs every 12 seconds to sync unread badges across devices)
-    const poll = setInterval(syncUnreadCount, 12000);
+    window.addEventListener("order-marked-read", handleOrderRead);
+    window.addEventListener("query-marked-read", handleQueryRead);
+
+    // Dynamic background polling (runs every 10 seconds to sync unread badges)
+    const poll = setInterval(() => {
+      syncUnreadCount();
+      syncUnreadQueriesCount();
+    }, 10000);
 
     return () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(queryChannel);
       window.removeEventListener("order-marked-read", handleOrderRead);
+      window.removeEventListener("query-marked-read", handleQueryRead);
       clearInterval(poll);
     };
   }, [isLoginPage, supabase, router, syncUnreadCount]);
@@ -238,6 +267,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               const Icon = item.icon;
               const isActive = pathname === item.href;
               const isOrders = item.href === "/admin/orders";
+              const isQueries = item.href === "/admin/queries";
               return (
                 <Link
                   key={item.href}
@@ -259,9 +289,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       {unreadCount}
                     </span>
                   )}
+                  {!isSidebarCollapsed && isQueries && unreadQueriesCount > 0 && (
+                    <span className="bg-amber-500 text-white font-sans text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                      {unreadQueriesCount}
+                    </span>
+                  )}
                   {isSidebarCollapsed && (
                     <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-brand-espresso text-white text-[10px] rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md">
-                      {item.label} {isOrders && unreadCount > 0 && `(${unreadCount})`}
+                      {item.label} {isOrders && unreadCount > 0 && `(${unreadCount})`} {isQueries && unreadQueriesCount > 0 && `(${unreadQueriesCount})`}
                     </div>
                   )}
                 </Link>
@@ -283,8 +318,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             )}
           </div>
 
-          <Link
+          <a
             href="/"
+            target="_blank"
+            rel="noopener noreferrer"
             className={`flex items-center ${
               isSidebarCollapsed ? "justify-center" : "gap-3 px-4"
             } h-10 rounded-lg text-[11px] font-bold uppercase tracking-wider text-brand-cream-warm/60 hover:text-white transition relative group`}
@@ -296,7 +333,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 Storefront
               </div>
             )}
-          </Link>
+          </a>
           <button
             onClick={handleLogout}
             className={`w-full flex items-center ${
@@ -385,13 +422,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <p className="text-[10px] text-brand-cream-warm/60 mt-1">{adminEmail}</p>
                   </div>
                 </div>
-                <Link
+                <a
                   href="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 h-10 rounded-lg text-xs font-bold uppercase tracking-wider text-brand-cream-warm/60 hover:text-white transition"
                 >
                   <Store className="w-4 h-4" />
                   <span>Storefront</span>
-                </Link>
+                </a>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 h-10 rounded-lg text-xs font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10 transition mt-1"
