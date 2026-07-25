@@ -13,27 +13,32 @@ const SUPABASE_ANON_KEY =
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request,
   });
 
+  const createRedirect = (targetUrl: URL) => {
+    const redirectResponse = NextResponse.redirect(targetUrl);
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return redirectResponse;
+  };
+
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        );
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
 
   // Refresh the session if expired
   let user = null;
@@ -78,12 +83,13 @@ export async function proxy(request: NextRequest) {
   }
 
   // Admin users are barred from customer user routes (/profile, /checkout, /complete-profile, /login, /signup)
-  const isCustomerRoute = PROTECTED_ROUTES.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  ) || request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/signup");
+  const isCustomerRoute =
+    PROTECTED_ROUTES.some((route) => request.nextUrl.pathname.startsWith(route)) ||
+    request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/signup");
 
   if (user && userRole === "admin" && isCustomerRoute) {
-    return NextResponse.redirect(new URL("/admin", request.url));
+    return createRedirect(new URL("/admin", request.url));
   }
 
   // Protected customer route enforcement — redirect unauthenticated users to login
@@ -94,27 +100,33 @@ export async function proxy(request: NextRequest) {
   if (isProtectedRoute && !user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
+    return createRedirect(loginUrl);
   }
 
   // Protect Admin Routes in Middleware
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login");
+  const isAdminRoute =
+    request.nextUrl.pathname.startsWith("/admin") &&
+    !request.nextUrl.pathname.startsWith("/admin/login");
+
   if (isAdminRoute) {
     if (!user || userRole !== "admin") {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
+      return createRedirect(new URL("/admin/login", request.url));
     }
   }
 
   // Redirect logged in admins away from admin login
   if (request.nextUrl.pathname.startsWith("/admin/login") && user && userRole === "admin") {
-    return NextResponse.redirect(new URL("/admin", request.url));
+    return createRedirect(new URL("/admin", request.url));
   }
 
   // Redirect authenticated customer users away from auth pages
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/signup");
+  const isAuthRoute =
+    request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/signup");
+
   if (isAuthRoute && user && userRole !== "admin") {
     const redirect = request.nextUrl.searchParams.get("redirect") || "/";
-    return NextResponse.redirect(new URL(redirect, request.url));
+    return createRedirect(new URL(redirect, request.url));
   }
 
   return response;
@@ -124,6 +136,6 @@ export const middleware = proxy;
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|assets|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|assets|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)$).*)",
   ],
 };
