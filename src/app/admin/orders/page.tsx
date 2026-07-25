@@ -327,7 +327,7 @@ export default function AdminOrdersPage() {
                           <span className={`px-2.5 py-1 rounded-full text-[9px] uppercase font-extrabold tracking-wider border ${
                             isCod ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-blue-100 text-blue-900 border-blue-300"
                           }`}>
-                            {isCod ? "COD" : "Online"}
+                            {isCod ? "Cash on Delivery" : "Online Payment"}
                           </span>
                         </td>
                         <td className="p-3.5" onClick={(e) => e.stopPropagation()}>
@@ -501,11 +501,11 @@ export default function AdminOrdersPage() {
                   >
                     <div className="flex justify-between items-center font-bold">
                       <span className="flex items-center gap-1 uppercase tracking-wider">
-                        <CreditCard className="w-3.5 h-3.5 text-brand-honey" /> {p.gateway}
+                        <CreditCard className="w-3.5 h-3.5 text-brand-honey" /> {p.gateway === "cod" ? "Cash on Delivery" : p.gateway}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-wider ${
-                          p.status === "captured" || p.status === "success" || p.status === "AUTHORIZED"
+                          p.status === "captured" || p.status === "success" || p.status === "AUTHORIZED" || p.status === "paid"
                             ? "bg-green-100 text-green-800"
                             : "bg-amber-100 text-amber-800"
                         }`}
@@ -518,18 +518,46 @@ export default function AdminOrdersPage() {
                         Txn ID: {p.gateway_payment_id}
                       </p>
                     )}
-                    {p.payment_method && (
-                      <p className="text-[10px] text-brand-espresso/60">Method: {p.payment_method}</p>
+                    {p.method && (
+                      <p className="text-[10px] text-brand-espresso/60 font-semibold">Method: {p.method}</p>
                     )}
                   </div>
                 ))
+              ) : selectedOrder.status === "pending_cod" || selectedOrder.status === "cod_pending" || selectedOrder.coupon_code?.includes("COD") ? (
+                <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-1.5 text-[11px]">
+                  <div className="flex justify-between items-center font-bold">
+                    <span className="flex items-center gap-1.5 uppercase tracking-wider text-amber-900">
+                      <CreditCard className="w-4 h-4 text-amber-700" /> Cash on Delivery (COD)
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] uppercase font-extrabold tracking-wider ${
+                      selectedOrder.status === "paid" ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-amber-200 text-amber-900 border border-amber-300"
+                    }`}>
+                      {selectedOrder.status === "paid" ? "PAID IN CASH" : "CASH PENDING"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-900/80 font-medium leading-relaxed">
+                    Payment Method: <strong>Cash on Delivery</strong> (Collect ₹{selectedOrder.total_amount.toFixed(2)} in cash upon delivery).
+                  </p>
+                </div>
               ) : (
-                <p className="text-[11px] text-brand-espresso/45 font-bold italic">
-                  No payment attempts logged for this order.
-                </p>
+                <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-1.5 text-[11px]">
+                  <div className="flex justify-between items-center font-bold">
+                    <span className="flex items-center gap-1.5 uppercase tracking-wider text-amber-900">
+                      <CreditCard className="w-4 h-4 text-amber-700" /> Cash on Delivery (COD)
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] uppercase font-extrabold tracking-wider ${
+                      selectedOrder.status === "paid" ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-amber-200 text-amber-900 border border-amber-300"
+                    }`}>
+                      {selectedOrder.status === "paid" ? "PAID IN CASH" : "CASH PENDING"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-900/80 font-medium leading-relaxed">
+                    Payment Method: <strong>Cash on Delivery</strong> (Collect ₹{selectedOrder.total_amount.toFixed(2)} in cash upon delivery).
+                  </p>
+                </div>
               )}
 
-              {/* [FIXED] - Mark COD order as paid manually */}
+              {/* Mark COD order as paid manually */}
               {(selectedOrder.status === "pending_cod" || selectedOrder.status === "cod_pending" || selectedOrder.payments?.some((p) => p.gateway === "cod")) && selectedOrder.status !== "paid" && (
                 <button
                   onClick={() => handleStatusChange(selectedOrder.id, selectedOrder.order_number, "paid")}
