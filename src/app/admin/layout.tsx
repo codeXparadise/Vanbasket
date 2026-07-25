@@ -189,9 +189,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const handleQueryRead = () => {
       syncUnreadQueriesCount();
     };
+    const handleToastEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail) {
+        const toastId = Math.random().toString(36).substring(2, 9);
+        setToasts((prev) => [
+          ...prev,
+          {
+            id: toastId,
+            kind: detail.kind || "query",
+            title: detail.title || "Notification",
+            detail: detail.message || detail.detail || "",
+            total_amount: detail.total_amount,
+          },
+        ]);
+        setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => t.id !== toastId));
+        }, 4000);
+      }
+    };
 
     window.addEventListener("order-marked-read", handleOrderRead);
     window.addEventListener("query-marked-read", handleQueryRead);
+    window.addEventListener("show-admin-toast", handleToastEvent);
 
     // Dynamic background polling (runs every 10 seconds to sync unread badges)
     const poll = setInterval(() => {
@@ -204,6 +224,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       supabase.removeChannel(queryChannel);
       window.removeEventListener("order-marked-read", handleOrderRead);
       window.removeEventListener("query-marked-read", handleQueryRead);
+      window.removeEventListener("show-admin-toast", handleToastEvent);
       clearInterval(poll);
     };
   }, [isLoginPage, supabase, router, syncUnreadCount]);

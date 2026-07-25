@@ -310,7 +310,7 @@ export default function AdminQueriesPage() {
                           isUnread ? "bg-amber-50/40 font-bold border-l-4 border-l-brand-honey" : ""
                         } ${isSelected ? "bg-brand-cream-warm/25 font-bold" : ""}`}
                       >
-                        <td className="p-3.5 font-mono select-all font-bold">{shortId}</td>
+                        <td className="p-3.5 font-sans select-all font-bold">{shortId}</td>
                         <td className="p-3.5 font-bold truncate max-w-[130px]">
                           <div>{q.name}</div>
                           {q.company && (
@@ -320,12 +320,12 @@ export default function AdminQueriesPage() {
                             </div>
                           )}
                         </td>
-                        <td className="p-3.5 text-brand-espresso/65 whitespace-nowrap font-mono text-[10px]">
+                        <td className="p-3.5 text-brand-espresso/80 whitespace-nowrap font-sans font-medium text-[11px]">
                           {formatDateTime(q.created_at)}
                         </td>
                         <td className="p-3.5 text-brand-espresso/80 truncate max-w-[150px]">
                           <div>{q.email}</div>
-                          {q.phone && <div className="text-[10px] text-brand-espresso/50 font-mono">{q.phone}</div>}
+                          {q.phone && <div className="text-[10px] text-brand-espresso/60 font-sans font-semibold">{q.phone}</div>}
                         </td>
                         <td className="p-3.5">
                           {isUnread ? (

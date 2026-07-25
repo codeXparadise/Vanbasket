@@ -245,6 +245,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         statsPaymentsCountRes,
         recentProductsRes,
         statsProductsCountRes,
+        regularUsersRes,
       ] = await Promise.all([
         supabase
           .from("orders")
@@ -272,6 +273,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           .from("products")
           .select("id", { count: "exact", head: true })
           .eq("is_active", true),
+        supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .or("role.is.null,role.neq.admin"),
       ]);
 
       if (recentOrdersRes.error) throw recentOrdersRes.error;
@@ -289,10 +294,10 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ["paid", "shipped", "delivered", "PAID", "PAYMENT_SUCCESS"].includes(order.status)
       );
       const revenueVal = paidOrdersList.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-      const uniqueCustomersVal = new Set((statsOrdersRes.data || []).map((order) => order.user_id).filter(Boolean)).size;
+
+      const regularUsersCount = regularUsersRes.count || 0;
 
       setRecentOrders(mappedOrders);
-      // Store all stats orders in local context storage (like orders array or let dashboard page reuse orders array)
       setOrders((statsOrdersRes.data || []) as unknown as Order[]);
       setRecentPayments((recentPaymentsRes.data || []) as unknown as Payment[]);
       setRecentProducts((recentProductsRes.data || []) as unknown as Product[]);
@@ -300,7 +305,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         revenue: revenueVal,
         activeProductsCount: statsProductsCountRes.count || 0,
         successfulPaymentsCount: statsPaymentsCountRes.count || 0,
-        uniqueCustomersCount: uniqueCustomersVal,
+        uniqueCustomersCount: regularUsersCount,
       });
       setIsDashboardLoaded(true);
     } catch (err) {

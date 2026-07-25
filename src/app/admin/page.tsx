@@ -23,7 +23,8 @@ export default function AdminDashboard() {
     loadingDashboard,
     isDashboardLoaded,
     fetchDashboardData,
-    orders, // Includes all orders fetched in fetchDashboardData
+    dashboardStats,
+    orders,
   } = useAdminState();
 
   const [period, setPeriod] = useState<FilterPeriod>("all");
@@ -160,23 +161,23 @@ export default function AdminDashboard() {
       </section>
 
       {/* Numerical Stats Widgets */}
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4 font-sans">
         {[
-          { label: `Revenue (${filteredStats.periodLabel})`, value: `Rs. ${filteredStats.revenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: IndianRupee },
+          { label: `Revenue (${filteredStats.periodLabel})`, value: `₹${filteredStats.revenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: IndianRupee },
           { label: "Live Products", value: String(recentProducts.length), icon: PackageCheck },
-          { label: "Customers Sourced", value: String(filteredStats.uniqueCustomers), icon: Users },
+          { label: "Registered Users", value: String(dashboardStats?.uniqueCustomersCount || 0), icon: Users },
           { label: "Razorpay checkouts", value: String(filteredStats.paymentsCount), icon: CreditCard },
         ].map((item) => {
           const Icon = item.icon;
           return (
             <div key={item.label} className="rounded-[28px] border border-[#e1d9cf] bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-[#8a7864]">{item.label}</p>
+                <p className="text-[11px] uppercase tracking-[0.24em] font-bold text-[#8a7864]">{item.label}</p>
                 <div className="rounded-2xl bg-[#f7efe4] p-3 text-[#9d742f]">
                   <Icon className="w-4 h-4" />
                 </div>
               </div>
-              <p className="mt-5 text-2xl font-semibold tracking-tight">{item.value}</p>
+              <p className="mt-5 text-2xl font-bold font-sans tracking-tight text-brand-espresso">{item.value}</p>
             </div>
           );
         })}

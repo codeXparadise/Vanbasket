@@ -316,7 +316,7 @@ export default function AdminOrdersPage() {
                           isUnread ? "bg-amber-50/40 font-bold border-l-4 border-l-brand-honey" : ""
                         } ${isSelected ? "bg-brand-cream-warm/25 font-bold" : ""}`}
                       >
-                        <td className="p-3.5 font-mono select-all">{o.order_number}</td>
+                        <td className="p-3.5 font-sans font-bold select-all">{o.order_number}</td>
                         <td className="p-3.5 font-bold truncate max-w-[120px]">
                           {o.profiles?.full_name || "Guest Client"}
                         </td>
