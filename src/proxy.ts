@@ -82,14 +82,26 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Admin users are barred from customer user routes (/profile, /checkout, /complete-profile, /login, /signup)
   const isCustomerRoute =
     PROTECTED_ROUTES.some((route) => request.nextUrl.pathname.startsWith(route)) ||
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/signup");
 
+  // If an admin user accesses customer auth/profile routes (/login, /signup, /profile, /checkout),
+  // clear admin session from customer context so clicking "Sign In" opens customer login instead of admin panel.
   if (user && userRole === "admin" && isCustomerRoute) {
-    return createRedirect(new URL("/admin", request.url));
+    const loginUrl = new URL("/login", request.url);
+    if (!request.nextUrl.pathname.startsWith("/login") && !request.nextUrl.pathname.startsWith("/signup")) {
+      loginUrl.searchParams.set("error", "admin_account_restricted");
+    }
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    const allCookies = request.cookies.getAll();
+    for (const cookie of allCookies) {
+      if (cookie.name.startsWith("sb-") && cookie.name.includes("-auth-token")) {
+        redirectResponse.cookies.set(cookie.name, "", { maxAge: 0, path: "/" });
+      }
+    }
+    return redirectResponse;
   }
 
   // Protected customer route enforcement — redirect unauthenticated users to login

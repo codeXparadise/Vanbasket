@@ -9,6 +9,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
 import { createClient } from "@/utils/supabase/client";
+import { ProductReviews } from "@/components/ProductReviews";
 
 interface ProductImageRow {
   image_url: string;
@@ -72,15 +73,20 @@ export default function ProductPage() {
     const load = async () => {
       const { data: products, error } = await supabase
         .from("products")
-        .select("name,description,product_variants(*),product_images(*)")
+        .select("slug,name,description,product_variants(*),product_images(*)")
         .eq("is_active", true);
 
       if (error || !products) return;
 
+      const paramStr = (params?.id || "").toLowerCase();
+
       const productData =
-        (products as ProductRow[]).find((candidate) =>
-          candidate.product_variants?.some((variant) => variant.id === params?.id)
-        ) || (products as ProductRow[])[0];
+        (products as (ProductRow & { slug?: string })[]).find((candidate) => {
+          if (candidate.slug && candidate.slug.toLowerCase() === paramStr) return true;
+          if (candidate.product_variants?.some((variant) => variant.id === params?.id)) return true;
+          if (candidate.name && candidate.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === paramStr) return true;
+          return false;
+        }) || (products as ProductRow[])[0];
 
       if (!productData) return;
 
@@ -97,8 +103,9 @@ export default function ProductPage() {
 
       setGalleryImages(defaultGallery);
 
-      if (!activeVariants.some((variant) => variant.id === params?.id) && activeVariants[0]) {
-        setSelectedVariantId(activeVariants[0].id);
+      if (activeVariants.length > 0) {
+        const matchedVariant = activeVariants.find((v) => v.id === params?.id) || activeVariants[0];
+        setSelectedVariantId(matchedVariant.id);
       }
     };
 
@@ -330,6 +337,9 @@ export default function ProductPage() {
             </div>
           </div>
         </div>
+
+        {/* Product Reviews & Star Breakdown Section */}
+        <ProductReviews productId="d4444444-4444-4444-8444-444444444444" productName={product.name} />
       </main>
       <Footer />
     </div>

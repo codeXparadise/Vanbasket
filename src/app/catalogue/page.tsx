@@ -105,9 +105,9 @@ export default function CataloguePage() {
           {staticProducts.map((item) => (
             <div key={item.id} className="bg-white border border-brand-honey/15 rounded-[2.5rem] overflow-hidden p-6 shadow-sm flex flex-col justify-between">
               <div className="space-y-6">
-                {/* Clickable Image to Redirect to Wild Honey first variant / detail view page */}
+                {/* Clickable Image to Redirect to Product detail view page */}
                 <Link 
-                  href={item.inquiryOnly ? `/contact-us?inquiry=${item.id}` : `/catalogue/${item.variants[0]?.id || "a1111111-1111-1111-1111-111111111111"}`}
+                  href={item.inquiryOnly ? `/contact-us?inquiry=${item.id}` : `/catalogue/${item.slug}`}
                   className="relative block aspect-square rounded-[1.8rem] overflow-hidden bg-brand-cream-light border border-brand-cream-dark/30 group cursor-pointer"
                 >
                   <Image 
@@ -129,7 +129,7 @@ export default function CataloguePage() {
                     ))}
                   </div>
                   <Link 
-                    href={item.inquiryOnly ? `/contact-us?inquiry=${item.id}` : `/catalogue/${item.variants[0]?.id || "a1111111-1111-1111-1111-111111111111"}`}
+                    href={item.inquiryOnly ? `/contact-us?inquiry=${item.id}` : `/catalogue/${item.slug}`}
                     className="block hover:text-brand-honey transition"
                   >
                     <h3 className="font-serif font-black text-2xl text-brand-espresso">{item.name}</h3>
@@ -189,7 +189,7 @@ export default function CataloguePage() {
                               <p className="text-[10px] text-brand-espresso/60">Rs. {Number(variant.price).toFixed(2)}</p>
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <Link href={`/catalogue/${variant.id}`} className="h-9 px-3 rounded-lg border border-brand-espresso text-brand-espresso text-[9px] font-bold uppercase tracking-widest flex items-center justify-center transition hover:bg-brand-espresso hover:text-white">
+                              <Link href={`/catalogue/${item.slug}`} className="h-9 px-3 rounded-lg border border-brand-espresso text-brand-espresso text-[9px] font-bold uppercase tracking-widest flex items-center justify-center transition hover:bg-brand-espresso hover:text-white">
                                 View
                               </Link>
                               <button

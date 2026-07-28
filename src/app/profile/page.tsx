@@ -23,7 +23,8 @@ import {
   ArrowLeft,
   Menu,
   X,
-  CreditCard
+  CreditCard,
+  Star
 } from "lucide-react";
 
 interface Profile {
@@ -79,7 +80,24 @@ interface Order {
   addresses: Address | null;
 }
 
-type TabType = "personal" | "addresses" | "orders";
+interface UserReviewItem {
+  id: string;
+  product_id: string;
+  user_id: string;
+  rating: number;
+  title: string | null;
+  comment: string;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+  products?: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+}
+
+type TabType = "personal" | "addresses" | "orders" | "reviews";
 
 // Note: metadata is handled by the parent layout template pattern
 export default function ProfilePage() {
@@ -91,15 +109,25 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [userReviews, setUserReviews] = useState<UserReviewItem[]>([]);
 
   // Loading States
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Review Editing Modal State
+  const [editingProfileReview, setEditingProfileReview] = useState<UserReviewItem | null>(null);
+  const [reviewFormRating, setReviewFormRating] = useState<number>(5);
+  const [reviewFormTitle, setReviewFormTitle] = useState("");
+  const [reviewFormComment, setReviewFormComment] = useState("");
+  const [reviewFormImage, setReviewFormImage] = useState<string | null>(null);
+  const [expandedUserReviews, setExpandedUserReviews] = useState<Record<string, boolean>>({});
 
   // Address Dialog / Form
   const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
@@ -205,6 +233,81 @@ export default function ProfilePage() {
     }
   }, [supabase]);
 
+  const fetchUserReviews = useCallback(async () => {
+    setIsLoadingReviews(true);
+    try {
+      const res = await fetch("/api/user/reviews");
+      if (res.ok) {
+        const data = await res.json();
+        setUserReviews(data.reviews || []);
+      }
+    } catch (err) {
+      console.error("Failed to load user reviews:", err);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  }, []);
+
+  const openEditProfileReviewModal = (review: UserReviewItem) => {
+    setEditingProfileReview(review);
+    setReviewFormRating(review.rating);
+    setReviewFormTitle(review.title || "");
+    setReviewFormComment(review.comment);
+    setReviewFormImage(review.image_url || null);
+  };
+
+  const handleUpdateProfileReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProfileReview) return;
+    setIsSaving(true);
+
+    try {
+      const res = await fetch(`/api/reviews/${editingProfileReview.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating: reviewFormRating,
+          title: reviewFormTitle,
+          comment: reviewFormComment,
+          image_url: reviewFormImage,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update review");
+      }
+
+      setFeedback({ type: "success", message: "Your review has been updated!" });
+      setEditingProfileReview(null);
+      fetchUserReviews();
+    } catch (err: any) {
+      setFeedback({ type: "error", message: err.message || "Failed to update review." });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteProfileReview = async (reviewId: string) => {
+    if (!confirm("Are you sure you want to delete this posted review?")) return;
+
+    try {
+      const res = await fetch(`/api/reviews/${reviewId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setFeedback({ type: "success", message: "Review deleted successfully." });
+        fetchUserReviews();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete review.");
+      }
+    } catch (err) {
+      console.error("Delete review error:", err);
+    }
+  };
+
   // 1. Authenticate and initialize profile load
   useEffect(() => {
     const checkAuth = async () => {
@@ -222,7 +325,8 @@ export default function ProfilePage() {
           .maybeSingle();
 
         if (prof?.role === "admin") {
-          router.push("/admin");
+          await supabase.auth.signOut();
+          router.push("/login?error=admin_account_restricted");
           return;
         }
 
@@ -245,8 +349,10 @@ export default function ProfilePage() {
       loadAddresses(user.id);
     } else if (activeTab === "orders") {
       loadOrders(user.id);
+    } else if (activeTab === "reviews") {
+      fetchUserReviews();
     }
-  }, [activeTab, user, loadAddresses, loadOrders]);
+  }, [activeTab, user, loadAddresses, loadOrders, fetchUserReviews]);
 
   // Real-time Order Updates Subscription
   useEffect(() => {
@@ -548,6 +654,7 @@ export default function ProfilePage() {
       case "personal": return "Personal Details";
       case "addresses": return "Saved Addresses";
       case "orders": return "Order History";
+      case "reviews": return "My Posted Reviews";
     }
   };
 
@@ -632,6 +739,18 @@ export default function ProfilePage() {
                 >
                   <ShoppingBag className="w-4 h-4" />
                   <span>Order History</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveTab("reviews"); setSelectedOrder(null); setIsMobileMenuOpen(false); setFeedback(null); }}
+                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl font-sans text-xs uppercase tracking-widest font-bold border transition-all ${
+                    activeTab === "reviews" && !selectedOrder
+                      ? "bg-brand-honey text-white border-brand-honey"
+                      : "bg-white/5 border-transparent text-brand-cream-warm hover:bg-white/10"
+                  }`}
+                >
+                  <Star className="w-4 h-4" />
+                  <span>My Reviews</span>
                 </button>
               </div>
             </div>
@@ -736,6 +855,18 @@ export default function ProfilePage() {
             >
               <ShoppingBag className="w-4 h-4 stroke-[2]" />
               <span>Order History</span>
+            </button>
+
+            <button
+              onClick={() => { setActiveTab("reviews"); setSelectedOrder(null); setFeedback(null); }}
+              className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl font-sans text-xs uppercase tracking-widest font-bold border transition-all duration-300 ${
+                activeTab === "reviews" && !selectedOrder
+                  ? "bg-brand-espresso text-brand-cream-light border-brand-espresso shadow-sm"
+                  : "bg-white/60 border-brand-cream-dark/50 hover:bg-brand-cream-warm/30 text-brand-espresso/80"
+              }`}
+            >
+              <Star className="w-4 h-4 stroke-[2]" />
+              <span>My Reviews</span>
             </button>
           </div>
 
@@ -938,9 +1069,20 @@ export default function ProfilePage() {
                             <p className="text-xs text-brand-espresso-muted">
                               Size variant: {item.variant_label_snapshot}
                             </p>
-                            <p className="text-[10px] text-brand-espresso-muted font-bold mt-1">
-                              Qty: {item.quantity}
-                            </p>
+                            <div className="flex items-center gap-3 mt-1.5">
+                              <span className="text-[10px] text-brand-espresso-muted font-bold">
+                                Qty: {item.quantity}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push('/catalogue/raw-wildflower-honey?writeReview=true#reviews');
+                                }}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-honey/15 text-brand-espresso font-bold text-[10px] uppercase tracking-wider hover:bg-brand-honey hover:text-brand-espresso transition shadow-xs"
+                              >
+                                <Star className="w-3 h-3 text-amber-500 fill-amber-500" /> Rate & Review
+                              </button>
+                            </div>
                           </div>
                         </div>
 
@@ -1455,6 +1597,15 @@ export default function ProfilePage() {
                                 </p>
                                 
                                 <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push('/catalogue/raw-wildflower-honey?writeReview=true#reviews');
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg bg-brand-honey/15 text-brand-espresso font-bold text-[9px] uppercase tracking-wider hover:bg-brand-honey transition flex items-center gap-1 shadow-xs"
+                                  >
+                                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" /> Rate & Review
+                                  </button>
                                   <span
                                     className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider ${
                                       order.status === "paid" || order.status === "delivered"
@@ -1476,7 +1627,218 @@ export default function ProfilePage() {
                     )}
                   </div>
                 )}
+
+                {/* MY REVIEWS PANEL */}
+                {activeTab === "reviews" && (
+                  <div>
+                    <h2 className="font-serif text-xl font-bold mb-1">My Posted Reviews</h2>
+                    <p className="text-xs text-brand-espresso-muted mb-6">
+                      View, update, or remove your customer ratings and feedback for Van Basket products.
+                    </p>
+
+                    {isLoadingReviews ? (
+                      <div className="flex py-12 justify-center">
+                        <Loader2 className="w-6 h-6 text-brand-honey animate-spin" />
+                      </div>
+                    ) : userReviews.length === 0 ? (
+                      <div className="border border-dashed border-brand-cream-dark/70 rounded-2xl p-12 text-center">
+                        <Star className="w-8 h-8 text-brand-espresso/30 mx-auto mb-3" />
+                        <p className="text-sm font-semibold text-brand-espresso/70 mb-1">No Reviews Posted Yet</p>
+                        <p className="text-xs text-brand-espresso-muted mb-4">
+                          You have not posted any product reviews yet.
+                        </p>
+                        <Link
+                          href="/#shop"
+                          className="px-5 py-2.5 bg-brand-espresso text-brand-cream-light rounded-full inline-block font-sans text-[10px] uppercase font-bold tracking-widest hover:bg-brand-honey hover:text-brand-espresso transition-colors"
+                        >
+                          Explore & Rate Products
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {userReviews.map((review) => {
+                          const productName = review.products?.name || "Raw Wild Forest Honey";
+                          const isLongText = review.comment.length > 200;
+                          const isExpanded = expandedUserReviews[review.id];
+                          const displayComment =
+                            isLongText && !isExpanded
+                              ? `${review.comment.slice(0, 200)}...`
+                              : review.comment;
+
+                          return (
+                            <div
+                              key={review.id}
+                              className="bg-white border border-brand-cream-dark/60 rounded-2xl p-5 shadow-sm space-y-3"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 bg-brand-cream-light rounded-xl border border-brand-cream-dark/40 overflow-hidden flex items-center justify-center p-1 shrink-0">
+                                    <Image
+                                      src="/assets/product-jar-1.png"
+                                      alt={productName}
+                                      width={48}
+                                      height={48}
+                                      className="object-contain"
+                                    />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-bold text-sm text-brand-espresso">{productName}</h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
+                                        <span>{review.rating}</span>
+                                        <Star className="w-2.5 h-2.5 fill-current" />
+                                      </span>
+                                      <span className="text-[10px] text-brand-espresso/50">
+                                        Posted on {new Date(review.created_at).toLocaleDateString("en-IN")}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => openEditProfileReviewModal(review)}
+                                    className="p-2 rounded-lg bg-brand-cream-light/60 hover:bg-brand-espresso hover:text-white transition text-brand-espresso/70"
+                                    title="Edit Review"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteProfileReview(review.id)}
+                                    className="p-2 rounded-lg bg-rose-50 hover:bg-rose-600 hover:text-white transition text-rose-600"
+                                    title="Delete Review"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {review.title && (
+                                <h5 className="font-bold text-xs text-brand-espresso">{review.title}</h5>
+                              )}
+
+                              <p className="text-xs text-brand-espresso/80 leading-relaxed">
+                                {displayComment}
+                              </p>
+
+                              {isLongText && (
+                                <button
+                                  onClick={() =>
+                                    setExpandedUserReviews((prev) => ({
+                                      ...prev,
+                                      [review.id]: !prev[review.id],
+                                    }))
+                                  }
+                                  className="text-[11px] font-bold text-brand-honey hover:underline inline-block mt-1"
+                                >
+                                  {isExpanded ? "Read Less" : "Read More"}
+                                </button>
+                              )}
+
+                              {review.image_url && (
+                                <div className="pt-2">
+                                  <div className="relative w-16 h-16 rounded-xl border border-brand-cream-dark/60 overflow-hidden">
+                                    <Image
+                                      src={review.image_url}
+                                      alt="Attached photo"
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
+            )}
+
+            {/* Profile Review Edit Modal */}
+            {editingProfileReview && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-espresso/60 backdrop-blur-sm animate-fade-in">
+                <div className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-brand-cream-dark">
+                  <button
+                    onClick={() => setEditingProfileReview(null)}
+                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-brand-cream-light text-brand-espresso/60"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+
+                  <h3 className="font-serif text-xl font-bold text-brand-espresso mb-4">
+                    Update Your Review
+                  </h3>
+
+                  <form onSubmit={handleUpdateProfileReview} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-brand-espresso/70 mb-1">
+                        Rating
+                      </label>
+                      <div className="flex items-center gap-1 text-amber-400">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReviewFormRating(star)}
+                            className="p-1 hover:scale-110 transition"
+                          >
+                            <Star
+                              className={`w-6 h-6 ${
+                                star <= reviewFormRating ? "fill-amber-400" : "text-gray-300"
+                              }`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-brand-espresso/70 mb-1">
+                        Headline Title
+                      </label>
+                      <input
+                        type="text"
+                        value={reviewFormTitle}
+                        onChange={(e) => setReviewFormTitle(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-brand-cream-dark text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-brand-espresso/70 mb-1">
+                        Review Comment *
+                      </label>
+                      <textarea
+                        rows={4}
+                        required
+                        value={reviewFormComment}
+                        onChange={(e) => setReviewFormComment(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-brand-cream-dark text-xs"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-2 border-t border-brand-cream-dark/30">
+                      <button
+                        type="button"
+                        onClick={() => setEditingProfileReview(null)}
+                        className="px-4 py-2 rounded-xl border border-brand-cream-dark text-xs font-bold uppercase tracking-wider"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSaving}
+                        className="px-5 py-2 rounded-xl bg-brand-espresso text-white text-xs font-bold uppercase tracking-wider hover:bg-brand-honey transition"
+                      >
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
             )}
 
           </div>

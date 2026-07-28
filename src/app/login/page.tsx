@@ -36,6 +36,9 @@ function LoginContent() {
     if (searchParams?.get("reset") === "success") {
       setResetMessage("Password updated successfully! Please sign in with your new password.");
     }
+    if (searchParams?.get("error") === "admin_account_restricted") {
+      setError("Administrator accounts are restricted from logging into the customer storefront. Please sign in with customer credentials.");
+    }
   }, [searchParams]);
 
   // Check if already logged in

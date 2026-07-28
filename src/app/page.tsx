@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Star, Quote, Play, VolumeX, Volume2, ChevronRight, MessageSquare, Phone, Mail, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { Star, Quote, Play, VolumeX, Volume2, ChevronRight, MessageSquare, Phone, Mail, ArrowRight, ShieldCheck, Sparkles, Package, Tag, Layers, CheckCircle2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { ProductDetail } from "@/components/ProductDetail";
@@ -330,9 +330,131 @@ export default function Home() {
         {/* Specifications Grids Section */}
         <TrustStrip />
 
+        {/* B2B Commercial, Bulk Supply & White-Labelling Section */}
+        <section className="py-20 md:py-28 bg-gradient-to-b from-brand-cream-light via-brand-cream-warm/30 to-brand-cream-light border-b border-brand-cream-dark/40 font-sans text-brand-espresso">
+          <div className="mx-auto max-w-7xl px-6 md:px-12 space-y-12">
+            
+            <div className="text-center max-w-3xl mx-auto space-y-3">
+              <span className="inline-flex items-center gap-2 rounded-full bg-brand-honey/15 border border-brand-honey/30 px-3.5 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-brand-honey">
+                <Sparkles className="w-3.5 h-3.5" /> Commercial & B2B Solutions
+              </span>
+              <h2 className="font-serif text-3xl md:text-5xl font-black text-brand-espresso leading-tight">
+                Beyond Retail Jars: <br className="hidden sm:inline" />
+                <span className="text-brand-honey">Bulk Orders & White Labelling</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-brand-espresso-muted font-light leading-relaxed max-w-2xl mx-auto">
+                We don’t just pack consumer jars. Van Basket is a trusted B2B forest produce partner supplying raw forest honey in bulk, pure Jamun Pulps, and private label packaging for wellness brands, exporters, and corporate gifting.
+              </p>
+            </div>
+
+            {/* 4 Feature Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Card 1: Bulk Honey */}
+              <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                  <Package className="w-6 h-6 text-brand-honey" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-lg text-brand-espresso">Bulk Forest Honey</h3>
+                  <p className="text-xs text-brand-espresso-muted mt-2 leading-relaxed">
+                    Available in 25kg, 50kg, and 200kg food-grade pails & drums. 100% pure Apis dorsata honey with laboratory purity certificate.
+                  </p>
+                </div>
+                <div className="pt-2 text-[11px] font-bold text-brand-honey flex items-center gap-1">
+                  <span>From 25kg to Multi-Tons</span>
+                </div>
+              </div>
+
+              {/* Card 2: Pure Jamun Pulp */}
+              <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold">
+                  <Layers className="w-6 h-6 text-purple-700" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-lg text-brand-espresso">Pure Jamun Pulps</h3>
+                  <p className="text-xs text-brand-espresso-muted mt-2 leading-relaxed">
+                    Seedless, thick, 100% natural seasonal Jamun pulp for health juice brands, ayurvedic wellness formulations, & food processing.
+                  </p>
+                </div>
+                <div className="pt-2 text-[11px] font-bold text-purple-700 flex items-center gap-1">
+                  <span>Commercial Beverage Standard</span>
+                </div>
+              </div>
+
+              {/* Card 3: White Labelling */}
+              <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                  <Tag className="w-6 h-6 text-emerald-700" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-lg text-brand-espresso">White Labelling</h3>
+                  <p className="text-xs text-brand-espresso-muted mt-2 leading-relaxed">
+                    Turnkey private label packaging in UV dark glass jars, gold-foil custom labels, & branded gift boxes for luxury retail & export.
+                  </p>
+                </div>
+                <div className="pt-2 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                  <span>Custom Luxury Branding</span>
+                </div>
+              </div>
+
+              {/* Card 4: Direct Co-op Sourcing */}
+              <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                  <ShieldCheck className="w-6 h-6 text-amber-700" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-lg text-brand-espresso">Direct Forest Co-op</h3>
+                  <p className="text-xs text-brand-espresso-muted mt-2 leading-relaxed">
+                    Fair-trade, sustainable harvesting directly from Chhattisgarh forest tribal communities with full batch provenance tracking.
+                  </p>
+                </div>
+                <div className="pt-2 text-[11px] font-bold text-amber-800 flex items-center gap-1">
+                  <span>100% Traceable Origin</span>
+                </div>
+              </div>
+            </div>
+
+            {/* B2B Action Banner */}
+            <div className="bg-brand-espresso text-white rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
+              <div>
+                <h4 className="font-serif text-xl font-bold text-brand-cream-light">
+                  Ready for B2B Supply or Private Label Samples?
+                </h4>
+                <p className="text-xs text-brand-cream-light/75 mt-1 font-light">
+                  Get custom quotes for bulk honey, seedless Jamun pulp, or turnkey white labelling within 2 hours.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <Link
+                  href="/contact-us?inquiry=bulk"
+                  className="px-5 py-3 rounded-xl bg-brand-honey hover:bg-brand-honey-dark text-brand-espresso font-bold text-xs uppercase tracking-wider transition shadow-sm flex items-center gap-2"
+                >
+                  <Mail className="w-4 h-4" /> Inquire Bulk Order
+                </Link>
+                <Link
+                  href="/contact-us?inquiry=whitelabel"
+                  className="px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs uppercase tracking-wider transition flex items-center gap-2"
+                >
+                  <Tag className="w-4 h-4 text-brand-honey" /> White Label Proposal
+                </Link>
+                <a
+                  href="https://wa.me/917724969017?text=Hello%20Van%20Basket,%20I%20want%20to%20inquire%20about%20Bulk%20Orders%20and%20White%20Labelling"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider transition flex items-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" /> B2B WhatsApp
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
         {/* Product Details & Checkout Section */}
         <section id="shop" className="border-b border-brand-cream-dark/40 bg-white/10">
-          <ProductDetail />
+          <ProductDetail showReviews={false} />
         </section>
 
         {/* Bulk Jamun Pulp & Commercial Supply Section */}
@@ -432,7 +554,7 @@ export default function Home() {
         </section>
 
         {/* Customer Testimonials Section */}
-        <section className="py-20 md:py-28 bg-brand-cream-warm/20 border-b border-brand-cream-dark/30">
+        <section className="py-20 md:py-28 bg-brand-cream-warm/20 border-b border-brand-cream-dark/30 font-sans">
           <div className="mx-auto max-w-7xl px-6 md:px-12 space-y-12">
             
             <div className="text-center max-w-2xl mx-auto space-y-3">
@@ -480,6 +602,8 @@ export default function Home() {
 
           </div>
         </section>
+
+
 
         {/* Frequently Asked Questions */}
         <GeoFaqSection />

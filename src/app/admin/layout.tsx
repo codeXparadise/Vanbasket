@@ -15,7 +15,9 @@ import {
   Users,
   MessageSquare,
   Bell,
+  Star,
 } from "lucide-react";
+
 // [FIXED] - Add VanBasket Brand Logo & Name Everywhere
 import BrandLogo from "@/components/BrandLogo";
 
@@ -249,6 +251,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/users", label: "Users", icon: Users },
     { href: "/admin/admins", label: "Admins", icon: Users },
     { href: "/admin/queries", label: "Queries", icon: MessageSquare },
+    { href: "/admin/reviews", label: "Reviews", icon: Star },
   ];
 
   const getInitials = (name: string) => {

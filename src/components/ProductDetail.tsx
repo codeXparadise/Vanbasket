@@ -3,10 +3,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Mail, ShoppingBag, ShieldCheck } from "lucide-react";
+import { AlertCircle, Mail, ShoppingBag, ShieldCheck, Star } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { createClient } from "@/utils/supabase/client";
 import { LottiePlayer } from "@/components/LottiePlayer";
+import { ProductReviews } from "@/components/ProductReviews";
 
 interface ProductRecord {
   id: string;
@@ -67,7 +68,7 @@ const fallbackVariants: Variant[] = [
   },
 ];
 
-export const ProductDetail = () => {
+export const ProductDetail = ({ showReviews = true }: { showReviews?: boolean }) => {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
   const { addToCartBatch, setIsCartOpen, isAuthenticated } = useCart();
@@ -86,6 +87,30 @@ export const ProductDetail = () => {
   const [isAdded, setIsAdded] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [slide, setSlide] = useState(0);
+  const [reviewStats, setReviewStats] = useState<{ average_rating: number; total_reviews: number }>({
+    average_rating: 4.8,
+    total_reviews: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch("/api/reviews?product_id=d4444444-4444-4444-8444-444444444444");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.stats) {
+            setReviewStats({
+              average_rating: data.stats.average_rating || 4.8,
+              total_reviews: data.stats.total_reviews || 0,
+            });
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    };
+    fetchStats();
+  }, []);
 
   const productImages = useMemo(() => {
     return galleryImages;
@@ -239,6 +264,24 @@ export const ProductDetail = () => {
           <h2 className="font-serif text-3xl font-black text-brand-espresso whitespace-nowrap overflow-hidden text-ellipsis">
             {productTitle}
           </h2>
+          {showReviews && (
+            <div className="flex items-center justify-center gap-2.5 pt-1">
+              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg shadow-xs">
+                <span className="text-xs font-bold text-brand-espresso">{reviewStats.average_rating > 0 ? reviewStats.average_rating.toFixed(1) : "5.0"}</span>
+                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              </div>
+              <button
+                onClick={() => {
+                  const el = document.getElementById("product-reviews-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="text-xs font-bold text-brand-honey hover:underline flex items-center gap-1"
+              >
+                <span>({reviewStats.total_reviews} {reviewStats.total_reviews === 1 ? "Rating" : "Ratings"})</span>
+                <span className="text-[11px] font-semibold text-brand-espresso underline ml-1">View Reviews →</span>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 lg:items-center">
@@ -277,6 +320,24 @@ export const ProductDetail = () => {
             <div className="hidden lg:block space-y-2">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-brand-honey block">Artisanal Selection</span>
               <h2 className="font-serif text-4xl font-bold leading-tight">{productTitle}</h2>
+              {showReviews && (
+                <div className="flex items-center gap-3 pt-1">
+                  <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg shadow-xs">
+                    <span className="text-xs font-bold text-brand-espresso">{reviewStats.average_rating > 0 ? reviewStats.average_rating.toFixed(1) : "5.0"}</span>
+                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  </div>
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById("product-reviews-section");
+                      if (el) el.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="text-xs font-bold text-brand-honey hover:underline flex items-center gap-1"
+                  >
+                    <span>({reviewStats.total_reviews} {reviewStats.total_reviews === 1 ? "Rating" : "Ratings"})</span>
+                    <span className="text-[11px] font-semibold text-brand-espresso underline ml-1">View Reviews →</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             <p className="text-xs text-brand-espresso-muted leading-relaxed font-light">{productDescription}</p>
@@ -364,8 +425,14 @@ export const ProductDetail = () => {
               </div>
             </div>
           </div>
+
+          {/* User Reviews & Rating Section */}
+          {showReviews && (
+            <ProductReviews productId="d4444444-4444-4444-8444-444444444444" productName={productTitle} />
+          )}
         </div>
       </div>
     </section>
   );
 };
+
