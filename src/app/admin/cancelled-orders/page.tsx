@@ -101,13 +101,31 @@ export default function CancelledOrdersPage() {
           profiles(full_name, email, phone),
           order_items(*),
           payments(*),
-          addresses:shipping_address_id(*),
-          reviews(rating, title, comment)
+          addresses:shipping_address_id(*)
         `)
         .in("status", ["cancelled", "refunded", "failed", "CANCELLED", "REFUNDED"])
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
+
+      // Safely attempt to fetch reviews without crashing if relationship is not yet cached
+      let reviewsMap: Record<string, Review[]> = {};
+      try {
+        const { data: reviewsData } = await supabase
+          .from("product_reviews")
+          .select("user_id, rating, title, comment");
+
+        if (reviewsData) {
+          reviewsData.forEach((rev: any) => {
+            if (rev.user_id) {
+              if (!reviewsMap[rev.user_id]) reviewsMap[rev.user_id] = [];
+              reviewsMap[rev.user_id].push(rev);
+            }
+          });
+        }
+      } catch (revErr) {
+        console.warn("Could not load product_reviews metadata:", revErr);
+      }
 
       const mapped = (data || []).map((o: any) => ({
         ...o,
@@ -115,6 +133,7 @@ export default function CancelledOrdersPage() {
         addresses: Array.isArray(o.addresses) ? o.addresses[0] || null : o.addresses || null,
         order_items: o.order_items || [],
         payments: o.payments || [],
+        reviews: o.user_id ? reviewsMap[o.user_id] || null : null,
       }));
 
       setOrders(mapped);
