@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useAdminState, Order } from "@/context/AdminContext";
-import { Loader2, Check, AlertCircle, Eye, Search, CreditCard, Tag, ArrowLeft, RefreshCw } from "lucide-react";
+import { Loader2, Check, AlertCircle, Eye, Search, CreditCard, Tag, ArrowLeft, RefreshCw, Ban, Lock, ShieldCheck } from "lucide-react";
 
 // [FIXED] - Add Cash on Delivery (COD) Payment Option
 const ORDER_STATUS_OPTIONS = ["pending", "pending_cod", "cod_pending", "paid", "failed", "shipped", "delivered", "cancelled", "refunded"];
@@ -18,6 +18,9 @@ export default function AdminOrdersPage() {
 
   // Selected Order Detail
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Status Category Filter Tab State ("all" | "active" | "cancelled" | "cod" | "online")
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "cancelled" | "cod" | "online">("all");
 
   // Read/unread orders tracking state
   const [readOrderIds, setReadOrderIds] = useState<string[]>([]);
@@ -79,6 +82,15 @@ export default function AdminOrdersPage() {
 
   const handleStatusChange = async (orderId: string, orderNumber: string, newStatus: string) => {
     setFeedback(null);
+    const targetOrder = orders.find((o) => o.id === orderId);
+    if (targetOrder && (targetOrder.status === "cancelled" || targetOrder.status === "refunded")) {
+      setFeedback({
+        type: "error",
+        msg: `Order ${orderNumber} is cancelled/refunded. Its status is permanently locked to preserve accounting integrity.`
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("orders")
@@ -139,7 +151,28 @@ export default function AdminOrdersPage() {
     markAsRead(order.id);
   };
 
+  const allCount = orders.length;
+  const cancelledCount = orders.filter((o) => ["cancelled", "refunded", "failed"].includes((o.status || "").toLowerCase())).length;
+  const activeCount = allCount - cancelledCount;
+  const codCount = orders.filter((o) => {
+    const st = (o.status || "").toLowerCase();
+    if (["cancelled", "refunded", "failed"].includes(st)) return false;
+    return st.includes("cod") || (o.payments && o.payments.some((p) => p.gateway === "cod" || p.method?.toLowerCase().includes("cash")));
+  }).length;
+  const onlineCount = Math.max(0, activeCount - codCount);
+
   const filteredOrders = orders.filter((o) => {
+    const isCancelledOrder = ["cancelled", "refunded", "failed"].includes((o.status || "").toLowerCase());
+    const isCodOrder =
+      o.status === "pending_cod" ||
+      o.status === "cod_pending" ||
+      (o.payments && o.payments.length > 0 && o.payments.some((p) => p.gateway === "cod" || p.method?.toLowerCase().includes("cash")));
+
+    if (statusFilter === "cancelled" && !isCancelledOrder) return false;
+    if (statusFilter === "active" && isCancelledOrder) return false;
+    if (statusFilter === "cod" && (!isCodOrder || isCancelledOrder)) return false;
+    if (statusFilter === "online" && (isCodOrder || isCancelledOrder)) return false;
+
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
 
@@ -260,6 +293,77 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
+      {/* Filter Tabs Bar (Including Dedicated Cancelled Orders Section) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-brand-cream-dark/30 text-xs">
+        <button
+          onClick={() => setStatusFilter("all")}
+          className={`px-4 py-2 rounded-xl font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+            statusFilter === "all"
+              ? "bg-brand-espresso text-white shadow-xs"
+              : "bg-brand-cream-warm/40 text-brand-espresso/70 hover:bg-brand-cream-warm"
+          }`}
+        >
+          All Orders ({allCount})
+        </button>
+
+        <button
+          onClick={() => setStatusFilter("active")}
+          className={`px-4 py-2 rounded-xl font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+            statusFilter === "active"
+              ? "bg-emerald-800 text-white shadow-xs"
+              : "bg-emerald-50 text-emerald-900 border border-emerald-200/80 hover:bg-emerald-100"
+          }`}
+        >
+          Active ({activeCount})
+        </button>
+
+        <button
+          onClick={() => setStatusFilter("cancelled")}
+          className={`px-4 py-2 rounded-xl font-extrabold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            statusFilter === "cancelled"
+              ? "bg-red-700 text-white shadow-xs"
+              : "bg-red-50 text-red-800 border border-red-200 hover:bg-red-100"
+          }`}
+        >
+          <Ban className="w-3.5 h-3.5" />
+          Cancelled & Refunded ({cancelledCount})
+        </button>
+
+        <button
+          onClick={() => setStatusFilter("cod")}
+          className={`px-4 py-2 rounded-xl font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+            statusFilter === "cod"
+              ? "bg-amber-600 text-white shadow-xs"
+              : "bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100"
+          }`}
+        >
+          COD Pending ({codCount})
+        </button>
+
+        <button
+          onClick={() => setStatusFilter("online")}
+          className={`px-4 py-2 rounded-xl font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+            statusFilter === "online"
+              ? "bg-sky-700 text-white shadow-xs"
+              : "bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100"
+          }`}
+        >
+          Online Paid ({onlineCount})
+        </button>
+      </div>
+
+      {statusFilter === "cancelled" && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3 text-red-900 shadow-2xs">
+          <Ban className="w-5 h-5 text-red-600 shrink-0" />
+          <div className="text-xs">
+            <p className="font-extrabold uppercase tracking-wider">Dedicated Cancelled & Refunded Orders Audit Section</p>
+            <p className="text-[11px] text-red-800/80 font-light">
+              All orders here were cancelled by customers or refunded via Razorpay. Statuses are permanently locked to preserve accounting compliance and stock inventory balance.
+            </p>
+          </div>
+        </div>
+      )}
+
       {feedback && (
         <div
           className={`flex items-start gap-3 rounded-xl p-4 text-xs border ${
@@ -345,21 +449,27 @@ export default function AdminOrdersPage() {
                           )}
                         </td>
                         <td className="p-3.5" onClick={(e) => e.stopPropagation()}>
-                          <select
-                            value={o.status}
-                            onChange={(e) => handleStatusChange(o.id, o.order_number, e.target.value)}
-                            className={`rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-brand-honey border ${
-                              isCancelled
-                                ? "bg-red-100 border-red-300 text-red-800 font-extrabold"
-                                : "bg-brand-cream-light/40 border-brand-cream-dark/60 text-brand-espresso"
-                            }`}
-                          >
-                            {ORDER_STATUS_OPTIONS.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
+                          {isCancelled ? (
+                            <span
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-300 shadow-2xs select-none"
+                              title="Cancelled/refunded order status is permanently locked"
+                            >
+                              <Lock className="w-3 h-3 text-red-600" />
+                              {o.status}
+                            </span>
+                          ) : (
+                            <select
+                              value={o.status}
+                              onChange={(e) => handleStatusChange(o.id, o.order_number, e.target.value)}
+                              className="rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider focus:outline-none focus:border-brand-honey border bg-brand-cream-light/40 border-brand-cream-dark/60 text-brand-espresso"
+                            >
+                              {ORDER_STATUS_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                         </td>
                         <td className={`p-3.5 font-bold ${isCancelled ? "text-red-600 font-extrabold" : ""}`}>
                           {isCancelled ? `-₹${o.total_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : `₹${o.total_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
@@ -409,20 +519,47 @@ export default function AdminOrdersPage() {
               <div>
                 <p className="text-[9px] uppercase tracking-widest text-brand-espresso/45 font-bold">Order Status</p>
                 <div className="mt-1">
-                  <select
-                    value={selectedOrder.status}
-                    onChange={(e) => handleStatusChange(selectedOrder.id, selectedOrder.order_number, e.target.value)}
-                    className="bg-brand-cream-warm border border-brand-cream-dark rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-brand-espresso focus:outline-none"
-                  >
-                    {ORDER_STATUS_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+                  {selectedOrder.status === "cancelled" || selectedOrder.status === "refunded" ? (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-100 text-red-900 border border-red-300 text-xs font-black uppercase tracking-wider select-none">
+                      <Lock className="w-3.5 h-3.5 text-red-600" />
+                      <span>{selectedOrder.status} (Locked)</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedOrder.status}
+                      onChange={(e) => handleStatusChange(selectedOrder.id, selectedOrder.order_number, e.target.value)}
+                      className="bg-brand-cream-warm border border-brand-cream-dark rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-brand-espresso focus:outline-none"
+                    >
+                      {ORDER_STATUS_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* Cancellation & Refund Audit Card */}
+            {(selectedOrder.status === "cancelled" || selectedOrder.status === "refunded") && (
+              <div className="p-4 bg-red-50/90 border border-red-200 rounded-2xl space-y-2 text-red-950 shadow-2xs">
+                <div className="flex items-center gap-2 font-bold text-xs">
+                  <Ban className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>Cancellation & Accounting Audit Record</span>
+                </div>
+                <div className="text-[11px] space-y-1 text-red-900/80 leading-relaxed font-light">
+                  <p><strong>Order Status:</strong> <span className="uppercase font-bold text-red-700">{selectedOrder.status} (Permanently Locked)</span></p>
+                  <p><strong>Stock Inventory:</strong> Product item quantities were restored back to warehouse inventory.</p>
+                  {selectedOrder.payments && selectedOrder.payments.some((p) => p.gateway === "razorpay") && (
+                    <div className="pt-1 flex items-center gap-1.5 text-emerald-800 font-bold text-[11px]">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Razorpay Online Bank Refund Processed</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Customer Details */}
             <div className="p-4 bg-brand-cream-light/20 rounded-2xl border border-brand-cream-light space-y-2">
