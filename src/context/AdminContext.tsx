@@ -139,6 +139,8 @@ export interface AuditLog {
   admin: string;
   details: string;
   timestamp: string;
+  target_resource?: string;
+  ip_address?: string;
 }
 
 interface DashboardStats {
