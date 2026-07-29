@@ -408,7 +408,7 @@ export default function AdminOrdersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((o) => {
+                  filteredOrders.map((o, index) => {
                     const isUnread = !readOrderIds.includes(o.id);
                     const isSelected = selectedOrder?.id === o.id;
                     const isCod =
@@ -419,7 +419,7 @@ export default function AdminOrdersPage() {
                     const isCancelled = o.status === "cancelled" || o.status === "refunded" || o.status === "failed";
                     return (
                       <tr
-                        key={o.id}
+                        key={o.id ? `order-row-${o.id}-${index}` : `order-row-${index}`}
                         onClick={() => selectOrder(o)}
                         className={`hover:bg-brand-cream-light/10 transition-colors cursor-pointer ${
                           isCancelled
@@ -472,7 +472,7 @@ export default function AdminOrdersPage() {
                           )}
                         </td>
                         <td className={`p-3.5 font-bold ${isCancelled ? "text-red-600 font-extrabold" : ""}`}>
-                          {isCancelled ? `-₹${o.total_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : `₹${o.total_amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
+                          {isCancelled ? `-₹${Number(o.total_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : `₹${Number(o.total_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}
                         </td>
                         <td className="p-3.5 text-center" onClick={(e) => e.stopPropagation()}>
                           <button
@@ -600,8 +600,8 @@ export default function AdminOrdersPage() {
                 Cart Manifest ({selectedOrder.order_items.length} items)
               </h4>
               <div className="divide-y divide-brand-cream-light border-y border-brand-cream-light max-h-48 overflow-y-auto pr-1">
-                {selectedOrder.order_items.map((item) => (
-                  <div key={item.id} className="py-2.5 flex justify-between items-start text-[11px]">
+                {selectedOrder.order_items.map((item, itemIdx) => (
+                  <div key={item.id ? `item-${item.id}-${itemIdx}` : `item-${itemIdx}`} className="py-2.5 flex justify-between items-start text-[11px]">
                     <div className="min-w-0 pr-4">
                       <p className="font-bold text-brand-espresso truncate">{item.product_name_snapshot}</p>
                       <p className="text-[10px] text-brand-espresso/50 mt-0.5">{item.variant_label_snapshot}</p>
@@ -649,9 +649,9 @@ export default function AdminOrdersPage() {
                 Payment Details
               </h4>
               {selectedOrder.payments && selectedOrder.payments.length > 0 ? (
-                selectedOrder.payments.map((p) => (
+                selectedOrder.payments.map((p, pIdx) => (
                   <div
-                    key={p.id}
+                    key={p.id ? `pay-${p.id}-${pIdx}` : `pay-${pIdx}`}
                     className="p-3 bg-brand-cream-light/30 border border-brand-cream-light rounded-xl space-y-1 text-[11px]"
                   >
                     <div className="flex justify-between items-center font-bold">

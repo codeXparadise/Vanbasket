@@ -11,6 +11,7 @@ import {
   Sparkles,
   Users,
   Filter,
+  Ban
 } from "lucide-react";
 
 type FilterPeriod = "all" | "daily" | "weekly" | "monthly";
@@ -38,6 +39,9 @@ export default function AdminDashboard() {
     if (!orders || orders.length === 0) {
       return {
         revenue: 0,
+        grossRevenue: 0,
+        cancelledDeductions: 0,
+        cancelledCount: 0,
         uniqueCustomers: 0,
         paymentsCount: 0,
         periodLabel: "All Time",
@@ -62,9 +66,17 @@ export default function AdminDashboard() {
       ["paid", "shipped", "delivered", "PAID", "PAYMENT_SUCCESS"].includes(o.status)
     );
 
-    const revenue = paidOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+    const cancelledOrders = relevantOrders.filter((o) =>
+      ["cancelled", "refunded", "failed"].includes((o.status || "").toLowerCase())
+    );
+
+    const grossRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+    const cancelledDeductions = cancelledOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+    const netRevenue = Math.max(0, grossRevenue - cancelledDeductions);
+
     const uniqueCustomers = new Set(relevantOrders.map((o) => o.user_id).filter(Boolean)).size;
     const paymentsCount = paidOrders.length;
+    const cancelledCount = cancelledOrders.length;
 
     // Calculate product sales distribution
     const productSales: Record<string, number> = {};
@@ -85,7 +97,10 @@ export default function AdminDashboard() {
         : "All Time";
 
     return {
-      revenue,
+      revenue: netRevenue,
+      grossRevenue,
+      cancelledDeductions,
+      cancelledCount,
       uniqueCustomers,
       paymentsCount,
       periodLabel,
@@ -161,23 +176,24 @@ export default function AdminDashboard() {
       </section>
 
       {/* Numerical Stats Widgets */}
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4 font-sans">
+      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5 font-sans">
         {[
-          { label: `Revenue (${filteredStats.periodLabel})`, value: `₹${filteredStats.revenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: IndianRupee },
-          { label: "Live Products", value: String(recentProducts.length), icon: PackageCheck },
-          { label: "Registered Users", value: String(dashboardStats?.uniqueCustomersCount || 0), icon: Users },
-          { label: "Razorpay checkouts", value: String(filteredStats.paymentsCount), icon: CreditCard },
-        ].map((item) => {
+          { label: `Net Revenue (${filteredStats.periodLabel})`, value: `₹${filteredStats.revenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: IndianRupee, isNegative: false },
+          { label: `Cancelled/Refunds (${filteredStats.cancelledCount})`, value: `-₹${filteredStats.cancelledDeductions.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: Ban, isNegative: true },
+          { label: "Live Products", value: String(recentProducts.length), icon: PackageCheck, isNegative: false },
+          { label: "Registered Users", value: String(dashboardStats?.uniqueCustomersCount || 0), icon: Users, isNegative: false },
+          { label: "Razorpay checkouts", value: String(filteredStats.paymentsCount), icon: CreditCard, isNegative: false },
+        ].map((item, idx) => {
           const Icon = item.icon;
           return (
-            <div key={item.label} className="rounded-[28px] border border-[#e1d9cf] bg-white p-5 shadow-sm">
+            <div key={`stat-card-${idx}`} className={`rounded-[28px] border p-5 shadow-sm ${item.isNegative ? "bg-red-50/70 border-red-200" : "bg-white border-[#e1d9cf]"}`}>
               <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-[0.24em] font-bold text-[#8a7864]">{item.label}</p>
-                <div className="rounded-2xl bg-[#f7efe4] p-3 text-[#9d742f]">
+                <p className={`text-[10px] uppercase tracking-[0.2em] font-bold ${item.isNegative ? "text-red-800" : "text-[#8a7864]"}`}>{item.label}</p>
+                <div className={`rounded-2xl p-3 ${item.isNegative ? "bg-red-100 text-red-700" : "bg-[#f7efe4] text-[#9d742f]"}`}>
                   <Icon className="w-4 h-4" />
                 </div>
               </div>
-              <p className="mt-5 text-2xl font-bold font-sans tracking-tight text-brand-espresso">{item.value}</p>
+              <p className={`mt-5 text-xl xl:text-2xl font-bold font-sans tracking-tight ${item.isNegative ? "text-red-700 font-extrabold" : "text-brand-espresso"}`}>{item.value}</p>
             </div>
           );
         })}
@@ -251,25 +267,30 @@ export default function AdminDashboard() {
             <ArrowUpRight className="w-5 h-5 text-[#9d742f]" />
           </div>
           <div className="mt-6 space-y-4">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="rounded-[22px] border border-[#efe7dd] bg-[#fcfaf7] p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold">{order.order_number}</p>
-                    <p className="mt-1 text-xs text-[#7e7063]">{order.profiles?.full_name || order.profiles?.email || "Guest customer"}</p>
+            {recentOrders.map((order, oIdx) => {
+              const isCancelled = ["cancelled", "refunded", "failed"].includes((order.status || "").toLowerCase());
+              return (
+                <div key={order.id ? `recent-ord-${order.id}-${oIdx}` : `recent-ord-${oIdx}`} className={`rounded-[22px] border p-4 ${isCancelled ? "bg-red-50/60 border-red-200" : "bg-[#fcfaf7] border-[#efe7dd]"}`}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">{order.order_number}</p>
+                      <p className="mt-1 text-xs text-[#7e7063]">{order.profiles?.full_name || order.profiles?.email || "Guest customer"}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-semibold ${isCancelled ? "text-red-600 font-extrabold" : ""}`}>
+                        {isCancelled ? `-Rs. ${Number(order.total_amount).toFixed(2)}` : `Rs. ${Number(order.total_amount).toFixed(2)}`}
+                      </p>
+                      <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${isCancelled ? "bg-red-100 text-red-800 border border-red-200 font-extrabold" : "bg-[#f4ebdf] text-[#8a6732]"}`}>
+                        {order.status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold">Rs. {Number(order.total_amount).toFixed(2)}</p>
-                    <span className="mt-1 inline-flex rounded-full bg-[#f4ebdf] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a6732]">
-                      {order.status}
-                    </span>
-                  </div>
+                  <p className="mt-3 text-xs text-[#7e7063]">
+                    {order.order_items.map((item) => `${item.product_name_snapshot} (${item.variant_label_snapshot}) x${item.quantity}`).join(", ")}
+                  </p>
                 </div>
-                <p className="mt-3 text-xs text-[#7e7063]">
-                  {order.order_items.map((item) => `${item.product_name_snapshot} (${item.variant_label_snapshot}) x${item.quantity}`).join(", ")}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -278,8 +299,8 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-semibold">Razorpay Transactions</h2>
           <p className="mt-1 text-sm text-[#6f655d]">Live transactions logs.</p>
           <div className="mt-5 space-y-3">
-            {recentPayments.map((payment) => (
-              <div key={payment.id} className="rounded-[20px] border border-[#efe7dd] bg-[#fcfaf7] p-4">
+            {recentPayments.map((payment, payIdx) => (
+              <div key={payment.id ? `recent-pay-${payment.id}-${payIdx}` : `recent-pay-${payIdx}`} className="rounded-[20px] border border-[#efe7dd] bg-[#fcfaf7] p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">{payment.orders?.order_number || payment.gateway_order_id || "Pending order"}</p>
