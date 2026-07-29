@@ -94,7 +94,14 @@ export default function CancelledOrdersPage() {
     setLoading(true);
     setFeedback(null);
     try {
-      const { data, error } = await supabase
+      // 1. Try querying dedicated public.cancelled_orders table first
+      const { data: directCancelledData } = await supabase
+        .from("cancelled_orders")
+        .select("*")
+        .order("cancelled_at", { ascending: false });
+
+      // 2. Fetch full orders details with items & addresses
+      const { data: fullOrdersData, error: ordersError } = await supabase
         .from("orders")
         .select(`
           *,
@@ -106,35 +113,38 @@ export default function CancelledOrdersPage() {
         .in("status", ["cancelled", "refunded", "failed", "CANCELLED", "REFUNDED"])
         .order("updated_at", { ascending: false });
 
-      if (error) throw error;
-
-      // Safely attempt to fetch reviews without crashing if relationship is not yet cached
-      let reviewsMap: Record<string, Review[]> = {};
-      try {
-        const { data: reviewsData } = await supabase
-          .from("product_reviews")
-          .select("user_id, rating, title, comment");
-
-        if (reviewsData) {
-          reviewsData.forEach((rev: any) => {
-            if (rev.user_id) {
-              if (!reviewsMap[rev.user_id]) reviewsMap[rev.user_id] = [];
-              reviewsMap[rev.user_id].push(rev);
-            }
-          });
-        }
-      } catch (revErr) {
-        console.warn("Could not load product_reviews metadata:", revErr);
+      if (ordersError && (!directCancelledData || directCancelledData.length === 0)) {
+        throw ordersError;
       }
 
-      const mapped = (data || []).map((o: any) => ({
-        ...o,
-        profiles: Array.isArray(o.profiles) ? o.profiles[0] || null : o.profiles || null,
-        addresses: Array.isArray(o.addresses) ? o.addresses[0] || null : o.addresses || null,
-        order_items: o.order_items || [],
-        payments: o.payments || [],
-        reviews: o.user_id ? reviewsMap[o.user_id] || null : null,
-      }));
+      // Map dedicated cancelled_orders table entries
+      const cancelledTableMap: Record<string, any> = {};
+      if (directCancelledData) {
+        directCancelledData.forEach((c: any) => {
+          if (c.order_id) {
+            cancelledTableMap[c.order_id] = c;
+          }
+        });
+      }
+
+      const mapped = (fullOrdersData || []).map((o: any) => {
+        const dbCancelRecord = cancelledTableMap[o.id];
+        return {
+          ...o,
+          cancellation_reason:
+            dbCancelRecord?.cancel_reason ||
+            o.cancellation_reason ||
+            o.cancel_reason ||
+            o.payments?.[0]?.raw_webhook_payload?.user_reason ||
+            o.payments?.[0]?.raw_webhook_payload?.reason ||
+            "Cancelled by customer",
+          cancelled_at: dbCancelRecord?.cancelled_at || o.updated_at || o.created_at,
+          profiles: Array.isArray(o.profiles) ? o.profiles[0] || null : o.profiles || null,
+          addresses: Array.isArray(o.addresses) ? o.addresses[0] || null : o.addresses || null,
+          order_items: o.order_items || [],
+          payments: o.payments || [],
+        };
+      });
 
       setOrders(mapped);
     } catch (err: any) {

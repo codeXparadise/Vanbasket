@@ -134,18 +134,48 @@ export async function POST(request: Request) {
     // 8. Update order status to 'refunded' (if online refund) or 'cancelled' (if COD / unpaid)
     const finalStatus = onlinePayment ? "refunded" : "cancelled";
     const userInputReason = reason && String(reason).trim() ? String(reason).trim() : "Cancelled by customer";
+    const cancelledTimestamp = new Date().toISOString();
 
     const { error: updateOrderError } = await adminSupabase
       .from("orders")
       .update({
         status: finalStatus,
         cancellation_reason: userInputReason,
-        updated_at: new Date().toISOString(),
+        updated_at: cancelledTimestamp,
       })
       .eq("id", order.id);
 
     if (updateOrderError) {
       return NextResponse.json({ error: `Failed to update order status: ${updateOrderError.message}` }, { status: 500 });
+    }
+
+    // 9. Insert record into dedicated public.cancelled_orders database table
+    try {
+      // Fetch customer profile details if available
+      const { data: profile } = await adminSupabase
+        .from("profiles")
+        .select("full_name, email, phone")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      await adminSupabase.from("cancelled_orders").insert([
+        {
+          order_id: order.id,
+          order_number: order.order_number,
+          user_id: user.id,
+          customer_name: profile?.full_name || user.email || "Customer",
+          customer_email: user.email || profile?.email || null,
+          customer_phone: profile?.phone || null,
+          cancel_reason: userInputReason,
+          total_amount: Number(order.total_amount || 0),
+          payment_gateway: onlinePayment ? "razorpay" : "cod",
+          refund_id: refundResult?.id || null,
+          refund_status: finalStatus,
+          cancelled_at: cancelledTimestamp,
+        },
+      ]);
+    } catch (insertErr) {
+      console.error("Non-fatal: Could not insert into public.cancelled_orders table:", insertErr);
     }
 
     return NextResponse.json({
