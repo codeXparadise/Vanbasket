@@ -63,16 +63,22 @@ export default function AdminDashboard() {
     });
 
     const paidOrders = relevantOrders.filter((o) =>
-      ["paid", "shipped", "delivered", "PAID", "PAYMENT_SUCCESS"].includes(o.status)
+      ["paid", "shipped", "delivered", "PAID", "PAYMENT_SUCCESS"].includes((o.status || "").toLowerCase()) ||
+      (!["cancelled", "refunded", "failed"].includes((o.status || "").toLowerCase()) && o.payments?.some((p) => p.status === "captured" || p.status === "paid"))
     );
 
     const cancelledOrders = relevantOrders.filter((o) =>
       ["cancelled", "refunded", "failed"].includes((o.status || "").toLowerCase())
     );
 
-    const grossRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+    // Net Revenue = Sum of all valid non-cancelled paid/fulfilled orders
+    const netRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+
+    // Total Canceled / Refunded deductions
     const cancelledDeductions = cancelledOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
-    const netRevenue = Math.max(0, grossRevenue - cancelledDeductions);
+
+    // Total Gross Volume before cancellation deductions
+    const grossRevenue = netRevenue + cancelledDeductions;
 
     const uniqueCustomers = new Set(relevantOrders.map((o) => o.user_id).filter(Boolean)).size;
     const paymentsCount = paidOrders.length;
@@ -179,10 +185,10 @@ export default function AdminDashboard() {
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5 font-sans">
         {[
           { label: `Net Revenue (${filteredStats.periodLabel})`, value: `₹${filteredStats.revenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: IndianRupee, isNegative: false },
-          { label: `Cancelled/Refunds (${filteredStats.cancelledCount})`, value: `-₹${filteredStats.cancelledDeductions.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: Ban, isNegative: true },
-          { label: "Live Products", value: String(recentProducts.length), icon: PackageCheck, isNegative: false },
+          { label: `Canceled Orders (${filteredStats.cancelledCount})`, value: `-₹${filteredStats.cancelledDeductions.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: Ban, isNegative: true },
+          { label: "Gross Volume", value: `₹${filteredStats.grossRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, icon: Sparkles, isNegative: false },
           { label: "Registered Users", value: String(dashboardStats?.uniqueCustomersCount || 0), icon: Users, isNegative: false },
-          { label: "Razorpay checkouts", value: String(filteredStats.paymentsCount), icon: CreditCard, isNegative: false },
+          { label: "Successful Checkouts", value: String(filteredStats.paymentsCount), icon: CreditCard, isNegative: false },
         ].map((item, idx) => {
           const Icon = item.icon;
           return (

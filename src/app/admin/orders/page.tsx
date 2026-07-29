@@ -326,7 +326,7 @@ export default function AdminOrdersPage() {
           }`}
         >
           <Ban className="w-3.5 h-3.5" />
-          Cancelled & Refunded ({cancelledCount})
+          Canceled Orders ({cancelledCount})
         </button>
 
         <button
@@ -353,14 +353,21 @@ export default function AdminOrdersPage() {
       </div>
 
       {statusFilter === "cancelled" && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3 text-red-900 shadow-2xs">
-          <Ban className="w-5 h-5 text-red-600 shrink-0" />
-          <div className="text-xs">
-            <p className="font-extrabold uppercase tracking-wider">Dedicated Cancelled & Refunded Orders Audit Section</p>
-            <p className="text-[11px] text-red-800/80 font-light">
-              All orders here were cancelled by customers or refunded via Razorpay. Statuses are permanently locked to preserve accounting compliance and stock inventory balance.
-            </p>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between gap-3 text-red-900 shadow-2xs flex-wrap">
+          <div className="flex items-center gap-3">
+            <Ban className="w-6 h-6 text-red-600 shrink-0" />
+            <div className="text-xs">
+              <p className="font-extrabold uppercase tracking-wider text-red-950">
+                Dedicated Canceled Orders Registry ({cancelledCount} Orders • Total Canceled Value: -₹{orders.filter(o => ["cancelled", "refunded", "failed"].includes((o.status || "").toLowerCase())).reduce((sum, o) => sum + Number(o.total_amount || 0), 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })})
+              </p>
+              <p className="text-[11px] text-red-800/80 font-light mt-0.5">
+                Tabular overview of all customer-canceled and Razorpay-refunded transactions. Statuses are permanently locked to preserve accounting compliance and stock inventory balance.
+              </p>
+            </div>
           </div>
+          <span className="px-3 py-1 rounded-full bg-red-200 text-red-950 text-[10px] uppercase font-bold tracking-widest border border-red-300">
+            {cancelledCount} Canceled Entries
+          </span>
         </div>
       )}
 
