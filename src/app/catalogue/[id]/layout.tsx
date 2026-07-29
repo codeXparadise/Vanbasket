@@ -29,8 +29,10 @@ export async function generateMetadata(props: {
     : "Buy pure raw Apis dorsata wild forest honey gathered from wild tree hives in Chhattisgarh. Zero sugar syrups, zero preservatives, 100% natural.";
 
   const image = isBulk
-    ? `${siteUrl}/assets/bulk-honey-new.jpg`
-    : `${siteUrl}/assets/product-jar-1.png`;
+    ? `${siteUrl}/assets/bulk-honey-order.jpg`
+    : isJamun
+    ? `${siteUrl}/assets/jamun-pulp-bulk.jpg`
+    : `${siteUrl}/assets/product-1.jpg`;
 
   return {
     title,
@@ -81,8 +83,10 @@ export default async function ProductDetailLayout(props: LayoutProps) {
     : "Apis dorsata raw wild honey gathered from wild tree hives in the deep forests of Chhattisgarh. Rich in antioxidants and natural pollen.";
 
   const productImage = isBulk
-    ? `${siteUrl}/assets/bulk-honey-new.jpg`
-    : `${siteUrl}/assets/product-jar-1.png`;
+    ? `${siteUrl}/assets/bulk-honey-order.jpg`
+    : isJamun
+    ? `${siteUrl}/assets/jamun-pulp-bulk.jpg`
+    : `${siteUrl}/assets/product-1.jpg`;
 
   const price = isBulk ? "10000.00" : isJamun ? "500.00" : "349.00";
 

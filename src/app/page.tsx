@@ -43,6 +43,8 @@ const customerReviews = [
 
 // Instagram Lifestyle Creative Images for the horizontal gallery
 const instagramGalleryImages = [
+  { src: "/assets/bulk-honey-order.jpg", title: "Bulk Order Honey", label: "50KG Drum & 20KG Container" },
+  { src: "/assets/jamun-pulp-bulk.jpg", title: "Bulk Jamun Pulp", label: "Fresh & Pure Wholesale" },
   { src: "/assets/SaveInta.com_671236435_18088753934113038_2584356244027066964_n.jpg", title: "Forest Harvest Reserve", label: "Biosphere Sourced" },
   { src: "/assets/SaveInta.com_693245979_17863277364686116_710550687666494002_n.jpg", title: "Tribal Tradition", label: "Ethically Gathered" },
   { src: "/assets/SaveInta.com_694298566_18088759847113038_4397863112803506586_n.jpg", title: "Apothecary Packaging", label: "UV Protection Glass" },
@@ -466,7 +468,7 @@ export default function Home() {
               <div className="lg:col-span-5 relative">
                 <div className="relative aspect-[4/3] rounded-[1.8rem] overflow-hidden bg-brand-cream-light border border-brand-cream-dark/30 shadow-lg">
                   <Image
-                    src="/assets/post_1.jpg"
+                    src="/assets/jamun-pulp-bulk.jpg"
                     alt="Jamun Pulp Bulk Sourcing"
                     fill
                     sizes="(max-width: 1024px) 100vw, 500px"

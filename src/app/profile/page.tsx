@@ -642,11 +642,13 @@ export default function ProfilePage() {
     );
   }
 
-  // Mappings for product variant images
-  const getProductImage = (variantLabel: string | null) => {
-    if (variantLabel === "250g") return "/assets/product-jar-1.png";
-    if (variantLabel === "500g") return "/assets/product-jar-2.png";
-    return "/assets/product-jar-1.png";
+  // Mappings for product ordered images
+  const getProductImage = (item?: OrderItem | string | null) => {
+    if (!item) return "/assets/product-1.jpg";
+    const name = typeof item === "string" ? item.toLowerCase() : (item.product_name_snapshot || "").toLowerCase();
+    if (name.includes("jamun") || name.includes("pulp")) return "/assets/jamun-pulp-bulk.jpg";
+    if (name.includes("bulk")) return "/assets/bulk-honey-order.jpg";
+    return "/assets/product-1.jpg";
   };
 
   const getTabLabel = (tab: TabType) => {
@@ -1054,7 +1056,7 @@ export default function ProfilePage() {
                           {/* Item Thumbnail */}
                           <div className="w-16 h-16 bg-brand-cream-light rounded-xl border border-brand-cream-dark/30 flex items-center justify-center shrink-0 relative overflow-hidden p-1">
                             <Image
-                              src={getProductImage(item.variant_label_snapshot)}
+                              src={getProductImage(item)}
                               alt={item.product_name_snapshot}
                               width={64}
                               height={64}
@@ -1561,7 +1563,7 @@ export default function ProfilePage() {
                                 {/* Thumbnail Image */}
                                 <div className="w-16 h-16 bg-brand-cream-light rounded-xl border border-brand-cream-dark/30 flex items-center justify-center shrink-0 relative overflow-hidden p-1 group-hover:scale-105 transition-transform">
                                   <Image
-                                    src={getProductImage(firstItem?.variant_label_snapshot)}
+                                    src={getProductImage(firstItem)}
                                     alt={firstItem?.product_name_snapshot || "Product image"}
                                     width={64}
                                     height={64}
