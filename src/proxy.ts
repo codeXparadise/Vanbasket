@@ -21,6 +21,10 @@ export async function proxy(request: NextRequest) {
     response.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
     });
+    // Prevent Next.js App Router from rendering raw RSC payload JSON when redirecting client transitions
+    if (request.headers.get("RSC") === "1" || request.headers.get("accept")?.includes("text/x-component")) {
+      redirectResponse.headers.set("x-middleware-rewrite", targetUrl.toString());
+    }
     return redirectResponse;
   };
 

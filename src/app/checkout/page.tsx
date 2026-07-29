@@ -20,7 +20,8 @@ import {
   MapPin,
   AlertCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Home
 } from "lucide-react";
 import { LottiePlayer } from "@/components/LottiePlayer";
 
@@ -66,6 +67,14 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
   
   const [orderWriteResult, setOrderWriteResult] = useState<OrderResult | null>(null);
+
+  const safeNavigate = (url: string) => {
+    if (typeof window !== "undefined") {
+      window.location.href = url;
+    } else {
+      router.push(url);
+    }
+  };
   
   interface RazorpayOrderData {
     order_id: string;
@@ -550,10 +559,8 @@ export default function CheckoutPage() {
       navigator.vibrate([100]); // 100ms haptic vibration for Android users
     }
     setRazorpayOrderData(null);
-    setError("Checkout cancelled. Returning to shop homepage.");
-    setTimeout(() => {
-      router.push("/");
-    }, 1500);
+    setError("Checkout cancelled. Returning to shop homepage safely.");
+    safeNavigate("/");
   };
 
   if (isLoadingAuth) {
@@ -588,12 +595,12 @@ export default function CheckoutPage() {
         <p className="font-sans text-xs text-brand-espresso-muted mb-6 max-w-sm">
           Please add wildflower honey variants to your selection before checking out.
         </p>
-        <Link
-          href="/#shop"
-          className="px-8 py-4 bg-brand-espresso text-brand-cream-light font-sans font-bold uppercase tracking-[0.2em] text-xs rounded-full hover:bg-brand-espresso/90 transition-all duration-300"
+        <button
+          onClick={() => safeNavigate("/catalogue")}
+          className="px-8 py-4 bg-brand-espresso text-brand-cream-light font-sans font-bold uppercase tracking-[0.2em] text-xs rounded-full hover:bg-brand-espresso/90 transition-all duration-300 shadow-md cursor-pointer"
         >
           Return to Shop
-        </Link>
+        </button>
       </div>
     );
   }
@@ -621,21 +628,61 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      {/* Mini Checkout Header */}
-      <header className="py-6 border-b border-brand-cream-dark/50 bg-brand-cream-light/60 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
-          <Link href="/" className="h-8 w-24 relative text-brand-espresso" aria-label="Go back to homepage">
-            <Image src="/assets/logo.svg" alt="VAN" fill sizes="96px" className="object-contain" />
-          </Link>
-          <div className="flex items-center space-x-4">
-            <span className="text-xs font-sans text-brand-espresso/60 hidden sm:inline">
-              Authenticated: <span className="font-semibold text-brand-espresso">{user?.email}</span>
-            </span>
-            <div className="flex items-center space-x-2 text-xs font-sans text-brand-forest">
-              <Lock className="w-3.5 h-3.5" />
-              <span className="uppercase tracking-widest font-semibold">Secure SSL</span>
+      {/* Enhanced Multi-Step Navigation & Trust Header */}
+      <header className="py-4 border-b border-brand-cream-dark/40 bg-white/90 backdrop-blur-md sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex flex-wrap items-center justify-between gap-3">
+          
+          {/* Brand Logo & Back / Home Navigation Links */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button
+              onClick={() => safeNavigate("/catalogue")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-brand-cream-warm/80 border border-brand-cream-dark/60 text-brand-espresso hover:bg-brand-espresso hover:text-brand-cream-light text-[11px] font-sans font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer shadow-xs"
+              title="Return to Product Catalogue (Cart items will remain saved as draft)"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Catalog</span>
+            </button>
+
+            <button
+              onClick={() => safeNavigate("/")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-brand-cream-dark/50 text-brand-espresso hover:bg-brand-cream-warm text-[11px] font-sans font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer"
+              title="Go Home Safely"
+            >
+              <Home className="w-3.5 h-3.5 text-brand-honey" />
+              <span className="hidden sm:inline">Home</span>
+            </button>
+
+            <div
+              onClick={() => safeNavigate("/")}
+              className="h-8 w-24 relative text-brand-espresso cursor-pointer ml-1"
+              aria-label="Go to homepage"
+            >
+              <Image src="/assets/logo.svg" alt="VAN BASKET" fill sizes="96px" className="object-contain" />
             </div>
           </div>
+
+          {/* Right Trust Badges: Cart Draft Saved & SSL Encryption */}
+          <div className="flex items-center gap-3">
+            {/* Cart Saved Draft Status Pill */}
+            {cartItems.length > 0 && (
+              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200/80 px-3 py-1.5 rounded-full shadow-2xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+                </span>
+                <span className="text-[10px] font-sans font-bold text-emerald-900 uppercase tracking-wider">
+                  Draft Saved ({cartItems.reduce((acc, i) => acc + i.quantity, 0)} items)
+                </span>
+              </div>
+            )}
+
+            {/* SSL Badge */}
+            <div className="hidden md:flex items-center space-x-1.5 text-[10px] font-sans text-brand-forest bg-brand-forest/10 border border-brand-forest/20 px-3 py-1.5 rounded-full">
+              <Lock className="w-3.5 h-3.5" />
+              <span className="uppercase tracking-widest font-bold">256-Bit SSL Encrypted</span>
+            </div>
+          </div>
+
         </div>
       </header>
 
@@ -692,53 +739,67 @@ export default function CheckoutPage() {
           )}
 
           <div className="pt-4">
-            <Link
-              href="/"
-              className="px-10 py-5 bg-brand-espresso text-brand-cream-light font-sans font-bold uppercase tracking-[0.2em] text-xs rounded-full hover:bg-brand-honey hover:text-brand-espresso transition-all duration-300 shadow-md"
+            <button
+              onClick={() => safeNavigate("/")}
+              className="px-10 py-5 bg-brand-espresso text-brand-cream-light font-sans font-bold uppercase tracking-[0.2em] text-xs rounded-full hover:bg-brand-honey hover:text-brand-espresso transition-all duration-300 shadow-md cursor-pointer inline-flex items-center gap-2"
             >
-              Continue Journey
-            </Link>
+              <Home className="w-4 h-4 text-brand-honey" /> Continue Journey
+            </button>
           </div>
         </div>
       ) : activeStep === 4 ? (
-        /* Failure / Sad Screen */
-        <div className="flex-1 flex flex-col items-center justify-center py-20 px-6 max-w-xl mx-auto text-center space-y-8 animate-scale-pop">
-          <div className="h-36 w-36 max-w-full mx-auto">
+        /* Payment Cancelled / Failure View */
+        <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 max-w-xl mx-auto text-center space-y-8 animate-scale-pop">
+          <div className="h-32 w-32 max-w-full mx-auto relative">
             <LottiePlayer
               src="/lottie/Error animation.lottie"
-              label="Payment Failed Animation"
+              label="Payment Cancelled Animation"
               className="w-full h-full"
             />
           </div>
 
-
           <div className="space-y-3">
-            <p className="text-xs font-sans uppercase tracking-[0.3em] text-brand-terracotta font-semibold">
-              Payment Unsuccessful
-            </p>
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-sans uppercase tracking-[0.25em] text-brand-honey font-bold bg-brand-honey/15 border border-brand-honey/30 px-3.5 py-1 rounded-full">
+              <ShieldCheck className="w-3.5 h-3.5" /> Draft Saved • Zero Charges Deducted
+            </span>
             <h1 className="font-serif text-3xl md:text-4xl font-black leading-tight text-brand-espresso">
-              Reserve Transaction Failed.
+              Payment Window Cancelled.
             </h1>
-            <p className="font-sans text-xs sm:text-sm text-brand-espresso-muted max-w-md mx-auto leading-relaxed">
-              {error || "We could not complete payment verification. Please check card limits or connection parameters and try again."}
+            <p className="font-sans text-xs sm:text-sm text-brand-espresso-muted max-w-md mx-auto leading-relaxed font-light">
+              {error || "The payment window was closed. No funds were deducted, and your selected items remain safely saved in your cart draft."}
             </p>
           </div>
 
-          <div className="pt-2 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+          <div className="p-4 bg-brand-cream-warm/40 border border-brand-cream-dark/50 rounded-2xl w-full max-w-md text-left text-xs space-y-2">
+            <div className="flex items-center gap-2 text-brand-forest font-bold">
+              <Check className="w-4 h-4" />
+              <span>Cart Preserved ({cartItems.reduce((acc, i) => acc + i.quantity, 0)} Items)</span>
+            </div>
+            <p className="text-[11px] text-brand-espresso-muted font-light leading-relaxed">
+              You can retry payment anytime, select Cash on Delivery (COD), or return to browsing the catalogue safely.
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
             <button
               onClick={handlePlaceOrder}
-              className="px-8 py-4 bg-brand-honey hover:bg-brand-honey-dark text-brand-cream-light font-sans font-bold uppercase tracking-wider text-xs rounded-full shadow-md transition-all duration-300 cursor-pointer focus:outline-none"
+              className="w-full sm:w-auto px-8 py-4 bg-brand-honey hover:bg-brand-honey-dark text-brand-espresso font-sans font-bold uppercase tracking-wider text-xs rounded-full shadow-md transition-all duration-300 cursor-pointer focus:outline-none flex items-center justify-center gap-2"
             >
-              Retry Payment
+              <CreditCard className="w-4 h-4" /> Retry Payment
             </button>
+
             <button
-              onClick={() => {
-                setError(null);
-                setActiveStep(2); // Go back to review
-              }}
-              className="px-8 py-4 border border-brand-espresso text-brand-espresso hover:bg-brand-cream-warm/45 font-sans font-bold uppercase tracking-wider text-xs rounded-full transition-all duration-300 cursor-pointer focus:outline-none"
+              onClick={() => safeNavigate("/catalogue")}
+              className="w-full sm:w-auto px-8 py-4 bg-brand-espresso text-brand-cream-light hover:bg-brand-espresso/90 font-sans font-bold uppercase tracking-wider text-xs rounded-full shadow-md transition-all duration-300 cursor-pointer focus:outline-none flex items-center justify-center gap-2"
             >
-              Modify Order & Review
+              <ArrowLeft className="w-4 h-4" /> Return to Catalogue
+            </button>
+
+            <button
+              onClick={() => safeNavigate("/")}
+              className="w-full sm:w-auto px-6 py-4 border border-brand-cream-dark/80 text-brand-espresso hover:bg-brand-cream-warm/50 font-sans font-bold uppercase tracking-wider text-xs rounded-full transition-all duration-300 cursor-pointer focus:outline-none flex items-center justify-center gap-2"
+            >
+              <Home className="w-4 h-4 text-brand-honey" /> Home
             </button>
           </div>
         </div>
