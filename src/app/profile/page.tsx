@@ -24,7 +24,9 @@ import {
   Menu,
   X,
   CreditCard,
-  Star
+  Star,
+  Ban,
+  ShieldCheck
 } from "lucide-react";
 
 interface Profile {
@@ -120,6 +122,11 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Cancellation Modal State
+  const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Review Editing Modal State
   const [editingProfileReview, setEditingProfileReview] = useState<UserReviewItem | null>(null);
@@ -305,6 +312,46 @@ export default function ProfilePage() {
       }
     } catch (err) {
       console.error("Delete review error:", err);
+    }
+  };
+
+  const handleCancelOrderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancellingOrder) return;
+    setIsCancelling(true);
+    setFeedback(null);
+
+    try {
+      const res = await fetch("/api/orders/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: cancellingOrder.id,
+          reason: cancellationReason.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to cancel order.");
+      }
+
+      setFeedback({ type: "success", message: data.message });
+      const newStatus = data.new_status || "cancelled";
+      setCancellingOrder(null);
+      setCancellationReason("");
+
+      setOrders((prev) =>
+        prev.map((o) => (o.id === cancellingOrder.id ? { ...o, status: newStatus } : o))
+      );
+      if (selectedOrder && selectedOrder.id === cancellingOrder.id) {
+        setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      setFeedback({ type: "error", message: error.message || "Failed to cancel order." });
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -878,83 +925,116 @@ export default function ProfilePage() {
             {/* FLIPKART-STYLE ORDER DETAILS SUB-VIEW (Overrides other layouts when an order is selected) */}
             {selectedOrder ? (
               <div className="space-y-6 animate-scale-in">
-                {/* Back button header (Desktop and mobile fallbacks) */}
-                <div className="flex items-center justify-between pb-4 border-b border-brand-cream-dark/30">
+                {/* Back button & Cancel Order header */}
+                <div className="flex items-center justify-between pb-4 border-b border-brand-cream-dark/30 flex-wrap gap-2">
                   <button
                     onClick={() => setSelectedOrder(null)}
-                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-espresso/80 hover:text-brand-honey transition-colors"
+                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-espresso/80 hover:text-brand-honey transition-colors cursor-pointer"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back to Order History</span>
                   </button>
-                  <span className="font-mono text-[10px] bg-brand-cream-warm px-2 py-0.5 rounded text-brand-espresso font-semibold">
-                    {selectedOrder.order_number}
-                  </span>
-                </div>
 
-                {/* Progress Tracker Stepper (Flipkart-Style) */}
-                <div className="bg-brand-cream-warm/15 border border-brand-cream-dark/30 rounded-2xl p-6">
-                  <h3 className="text-xs uppercase font-extrabold tracking-widest text-brand-honey mb-4">
-                    Order Status Progress
-                  </h3>
-                  
-                  <div className="relative flex justify-between items-center max-w-xl mx-auto py-2">
-                    {/* Background Progress Bar Line */}
-                    <div className="absolute left-0 right-0 top-1/2 h-1 bg-brand-cream-dark/40 -translate-y-1/2 z-0" />
-                    <div 
-                      className={`absolute left-0 top-1/2 h-1 bg-brand-forest -translate-y-1/2 z-0 transition-all duration-700`} 
-                      style={{ 
-                        width: selectedOrder.status === "delivered" ? "100%" : 
-                               selectedOrder.status === "shipped" ? "66%" : 
-                               selectedOrder.status === "paid" ? "33%" : "0%" 
-                      }}
-                    />
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[10px] bg-brand-cream-warm px-2.5 py-1 rounded text-brand-espresso font-semibold">
+                      {selectedOrder.order_number}
+                    </span>
 
-                    {/* Step 1: Placed */}
-                    <div className="relative z-10 flex flex-col items-center">
-                      <div className="w-7 h-7 rounded-full bg-brand-forest text-white flex items-center justify-center text-[10px] font-bold">
-                        ✓
-                      </div>
-                      <span className="text-[10px] font-bold mt-1.5 text-brand-espresso">Placed</span>
-                    </div>
-
-                    {/* Step 2: Payment Received */}
-                    <div className="relative z-10 flex flex-col items-center">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                        ["paid", "shipped", "delivered"].includes(selectedOrder.status)
-                          ? "bg-brand-forest text-white"
-                          : "bg-brand-cream-light border-2 border-brand-cream-dark text-brand-espresso/50"
-                      }`}>
-                        {["paid", "shipped", "delivered"].includes(selectedOrder.status) ? "✓" : "2"}
-                      </div>
-                      <span className="text-[10px] font-bold mt-1.5 text-brand-espresso">Paid</span>
-                    </div>
-
-                    {/* Step 3: Dispatched */}
-                    <div className="relative z-10 flex flex-col items-center">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                        ["shipped", "delivered"].includes(selectedOrder.status)
-                          ? "bg-brand-forest text-white"
-                          : "bg-brand-cream-light border-2 border-brand-cream-dark text-brand-espresso/50"
-                      }`}>
-                        {["shipped", "delivered"].includes(selectedOrder.status) ? "✓" : "3"}
-                      </div>
-                      <span className="text-[10px] font-bold mt-1.5 text-brand-espresso">Shipped</span>
-                    </div>
-
-                    {/* Step 4: Delivered */}
-                    <div className="relative z-10 flex flex-col items-center">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                        selectedOrder.status === "delivered"
-                          ? "bg-brand-forest text-white"
-                          : "bg-brand-cream-light border-2 border-brand-cream-dark text-brand-espresso/50"
-                      }`}>
-                        {selectedOrder.status === "delivered" ? "✓" : "4"}
-                      </div>
-                      <span className="text-[10px] font-bold mt-1.5 text-brand-espresso">Delivered</span>
-                    </div>
+                    {!["cancelled", "refunded", "delivered"].includes((selectedOrder.status || "").toLowerCase()) && (
+                      <button
+                        onClick={() => {
+                          setCancellingOrder(selectedOrder);
+                          setCancellationReason("");
+                        }}
+                        className="px-3 py-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-sans text-[10px] uppercase tracking-wider font-extrabold rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Ban className="w-3.5 h-3.5 text-red-600" /> Cancel Order
+                      </button>
+                    )}
                   </div>
                 </div>
+
+                {/* Progress Tracker Stepper (Flipkart-Style) OR Cancelled/Refunded Banner */}
+                {["cancelled", "refunded"].includes((selectedOrder.status || "").toLowerCase()) ? (
+                  <div className="bg-red-50/80 border border-red-200 rounded-2xl p-6 text-center space-y-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-800 text-[10px] uppercase font-bold tracking-widest">
+                      <AlertCircle className="w-3.5 h-3.5" /> Order Cancelled
+                    </div>
+                    <h4 className="font-serif text-lg font-bold text-red-950">
+                      {selectedOrder.status === "refunded"
+                        ? "Order Cancelled & Refund Initiated via Razorpay"
+                        : "This Order Has Been Cancelled"}
+                    </h4>
+                    <p className="text-xs text-red-800/80 max-w-md mx-auto font-light leading-relaxed">
+                      {selectedOrder.status === "refunded"
+                        ? `Full refund of ₹${selectedOrder.total_amount.toFixed(2)} has been automatically credited back to your original bank account via Razorpay.`
+                        : "No charges were processed for this order."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-brand-cream-warm/15 border border-brand-cream-dark/30 rounded-2xl p-6">
+                    <h3 className="text-xs uppercase font-extrabold tracking-widest text-brand-honey mb-4">
+                      Order Status Progress
+                    </h3>
+                    
+                    <div className="relative flex justify-between items-center max-w-xl mx-auto py-2">
+                      {/* Background Progress Bar Line */}
+                      <div className="absolute left-0 right-0 top-1/2 h-1 bg-brand-cream-dark/40 -translate-y-1/2 z-0" />
+                      <div 
+                        className={`absolute left-0 top-1/2 h-1 bg-brand-forest -translate-y-1/2 z-0 transition-all duration-700`} 
+                        style={{ 
+                          width: selectedOrder.status === "delivered" ? "100%" : 
+                                 selectedOrder.status === "shipped" ? "66%" : 
+                                 selectedOrder.status === "paid" ? "33%" : "0%" 
+                        }}
+                      />
+
+                      {/* Step 1: Placed */}
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className="w-7 h-7 rounded-full bg-brand-forest text-white flex items-center justify-center text-[10px] font-bold">
+                          ✓
+                        </div>
+                        <span className="text-[10px] font-bold mt-1.5 text-brand-espresso">Placed</span>
+                      </div>
+
+                      {/* Step 2: Payment Received */}
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                          ["paid", "shipped", "delivered"].includes(selectedOrder.status)
+                            ? "bg-brand-forest text-white"
+                            : "bg-brand-cream-light border-2 border-brand-cream-dark text-brand-espresso/50"
+                        }`}>
+                          {["paid", "shipped", "delivered"].includes(selectedOrder.status) ? "✓" : "2"}
+                        </div>
+                        <span className="text-[10px] font-bold mt-1.5 text-brand-espresso">Paid</span>
+                      </div>
+
+                      {/* Step 3: Dispatched */}
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                          ["shipped", "delivered"].includes(selectedOrder.status)
+                            ? "bg-brand-forest text-white"
+                            : "bg-brand-cream-light border-2 border-brand-cream-dark text-brand-espresso/50"
+                        }`}>
+                          {["shipped", "delivered"].includes(selectedOrder.status) ? "✓" : "3"}
+                        </div>
+                        <span className="text-[10px] font-bold mt-1.5 text-brand-espresso">Shipped</span>
+                      </div>
+
+                      {/* Step 4: Delivered */}
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                          selectedOrder.status === "delivered"
+                            ? "bg-brand-forest text-white"
+                            : "bg-brand-cream-light border-2 border-brand-cream-dark text-brand-espresso/50"
+                        }`}>
+                          {selectedOrder.status === "delivered" ? "✓" : "4"}
+                        </div>
+                        <span className="text-[10px] font-bold mt-1.5 text-brand-espresso">Delivered</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Shipping & Payment Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1132,14 +1212,29 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 
-                {/* Back button at footer */}
-                <button
-                  onClick={() => setSelectedOrder(null)}
-                  className="w-full h-12 bg-brand-espresso text-brand-cream-light font-sans text-xs uppercase tracking-widest font-bold rounded-full hover:bg-brand-espresso/90 transition-colors flex items-center justify-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Order History</span>
-                </button>
+                {/* Back & Cancel buttons at footer */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => setSelectedOrder(null)}
+                    className="flex-1 h-12 bg-brand-espresso text-brand-cream-light font-sans text-xs uppercase tracking-widest font-bold rounded-full hover:bg-brand-espresso/90 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back to Order History</span>
+                  </button>
+
+                  {!["cancelled", "refunded", "delivered"].includes((selectedOrder.status || "").toLowerCase()) && (
+                    <button
+                      onClick={() => {
+                        setCancellingOrder(selectedOrder);
+                        setCancellationReason("");
+                      }}
+                      className="h-12 px-6 border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 font-sans text-xs uppercase tracking-widest font-extrabold rounded-full transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                    >
+                      <Ban className="w-4 h-4 text-red-600" />
+                      <span>Cancel Order & Refund</span>
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <>
@@ -1836,6 +1931,83 @@ export default function ProfilePage() {
                         className="px-5 py-2 rounded-xl bg-brand-espresso text-white text-xs font-bold uppercase tracking-wider hover:bg-brand-honey transition"
                       >
                         {isSaving ? "Saving..." : "Save Changes"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Order Cancellation Modal */}
+            {cancellingOrder && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-espresso/60 backdrop-blur-sm animate-fade-in">
+                <div className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-brand-cream-dark space-y-6">
+                  <button
+                    onClick={() => !isCancelling && setCancellingOrder(null)}
+                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-brand-cream-light text-brand-espresso/60 transition cursor-pointer"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+
+                  <div className="flex items-center gap-3 border-b border-brand-cream-light pb-4">
+                    <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center shrink-0 font-bold">
+                      <Ban className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-brand-espresso">Confirm Order Cancellation</h3>
+                      <p className="text-[11px] text-brand-espresso-muted font-mono">Order No: {cancellingOrder.order_number}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-4 space-y-1.5 text-xs text-amber-900">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-amber-700" />
+                      Safe & Secure Refund
+                    </p>
+                    <p className="text-[11px] text-amber-950/80 font-light leading-relaxed">
+                      {cancellingOrder.payments && cancellingOrder.payments.some((p: any) => p.gateway === "razorpay" && ["captured", "paid", "success", "authorized"].includes(p.status?.toLowerCase()))
+                        ? `Full refund of ₹${cancellingOrder.total_amount.toFixed(2)} will be automatically processed back to your original bank account via Razorpay.`
+                        : `Order total: ₹${cancellingOrder.total_amount.toFixed(2)} (Cash on Delivery / Unpaid).`}
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleCancelOrderSubmit} className="space-y-4 font-sans">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-bold tracking-wider text-brand-espresso/70">
+                        Reason for Cancellation (Optional)
+                      </label>
+                      <textarea
+                        value={cancellationReason}
+                        onChange={(e) => setCancellationReason(e.target.value)}
+                        placeholder="e.g. Ordered by mistake, changed mind, wrong address..."
+                        rows={3}
+                        className="w-full p-3 rounded-xl border border-brand-cream-dark bg-brand-cream-light/30 focus:border-brand-honey focus:outline-none text-xs font-sans resize-none"
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        disabled={isCancelling}
+                        onClick={() => setCancellingOrder(null)}
+                        className="flex-1 h-11 border border-brand-cream-dark text-brand-espresso font-sans text-xs uppercase tracking-widest font-bold rounded-xl hover:bg-brand-cream-warm transition-colors cursor-pointer"
+                      >
+                        Keep Order
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={isCancelling}
+                        className="flex-1 h-11 bg-red-600 hover:bg-red-700 text-white font-sans text-xs uppercase tracking-widest font-extrabold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                      >
+                        {isCancelling ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+                          </>
+                        ) : (
+                          "Confirm Cancel"
+                        )}
                       </button>
                     </div>
                   </form>
