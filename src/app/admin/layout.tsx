@@ -16,8 +16,7 @@ import {
   MessageSquare,
   Bell,
   Star,
-  Ban,
-  ScrollText
+  Ban
 } from "lucide-react";
 
 // [FIXED] - Add VanBasket Brand Logo & Name Everywhere
@@ -251,7 +250,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/orders", label: "Orders", icon: ClipboardList },
     { href: "/admin/cancelled-orders", label: "Canceled Orders", icon: Ban },
-    { href: "/admin/logs", label: "Logs", icon: ScrollText },
     { href: "/admin/users", label: "Users", icon: Users },
     { href: "/admin/admins", label: "Admins", icon: Users },
     { href: "/admin/queries", label: "Queries", icon: MessageSquare },

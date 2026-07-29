@@ -82,6 +82,8 @@ export async function POST(request: Request) {
           },
         });
 
+        const exactReason = reason && String(reason).trim() ? String(reason).trim() : "Cancelled by customer";
+
         // Update payment record in database
         await adminSupabase
           .from("payments")
@@ -94,7 +96,8 @@ export async function POST(request: Request) {
               refund_amount: refundResult.amount,
               refund_status: refundResult.status,
               refunded_at: new Date().toISOString(),
-              reason: reason || "User cancelled order",
+              reason: exactReason,
+              user_reason: exactReason,
             },
           })
           .eq("id", onlinePayment.id);
@@ -130,11 +133,13 @@ export async function POST(request: Request) {
 
     // 8. Update order status to 'refunded' (if online refund) or 'cancelled' (if COD / unpaid)
     const finalStatus = onlinePayment ? "refunded" : "cancelled";
+    const userInputReason = reason && String(reason).trim() ? String(reason).trim() : "Cancelled by customer";
 
     const { error: updateOrderError } = await adminSupabase
       .from("orders")
       .update({
         status: finalStatus,
+        cancellation_reason: userInputReason,
         updated_at: new Date().toISOString(),
       })
       .eq("id", order.id);

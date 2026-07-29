@@ -133,15 +133,7 @@ export interface Coupon {
   created_at: string;
 }
 
-export interface AuditLog {
-  id: string;
-  action: string;
-  admin: string;
-  details: string;
-  timestamp: string;
-  target_resource?: string;
-  ip_address?: string;
-}
+
 
 interface DashboardStats {
   revenue: number;
@@ -158,7 +150,6 @@ interface AdminContextType {
   loadingUsers: boolean;
   loadingQueries: boolean;
   loadingCoupons: boolean;
-  loadingLogs: boolean;
 
   // Loaded Checkers
   isDashboardLoaded: boolean;
@@ -167,7 +158,6 @@ interface AdminContextType {
   isUsersLoaded: boolean;
   isQueriesLoaded: boolean;
   isCouponsLoaded: boolean;
-  isLogsLoaded: boolean;
 
   // Data States
   dashboardStats: DashboardStats | null;
@@ -180,7 +170,6 @@ interface AdminContextType {
   addresses: Address[];
   queries: ContactQuery[];
   coupons: Coupon[];
-  logs: AuditLog[];
 
   // Fetch Functions
   fetchDashboardData: (silent?: boolean) => Promise<void>;
@@ -189,7 +178,6 @@ interface AdminContextType {
   fetchUsers: (silent?: boolean) => Promise<void>;
   fetchQueries: (silent?: boolean) => Promise<void>;
   fetchCoupons: (silent?: boolean) => Promise<void>;
-  fetchLogs: (silent?: boolean) => Promise<void>;
 
   // Manual Setters for instant local updates (e.g. edits, deletes)
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
@@ -197,7 +185,6 @@ interface AdminContextType {
   setUsers: React.Dispatch<React.SetStateAction<AdminUser[]>>;
   setQueries: React.Dispatch<React.SetStateAction<ContactQuery[]>>;
   setCoupons: React.Dispatch<React.SetStateAction<Coupon[]>>;
-  setLogs: React.Dispatch<React.SetStateAction<AuditLog[]>>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -216,7 +203,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [queries, setQueries] = useState<ContactQuery[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [logs, setLogs] = useState<AuditLog[]>([]);
 
   // Loaders
   const [loadingDashboard, setLoadingDashboard] = useState(false);
@@ -225,7 +211,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingQueries, setLoadingQueries] = useState(false);
   const [loadingCoupons, setLoadingCoupons] = useState(false);
-  const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Loaded Checkers
   const [isDashboardLoaded, setIsDashboardLoaded] = useState(false);
@@ -234,7 +219,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isUsersLoaded, setIsUsersLoaded] = useState(false);
   const [isQueriesLoaded, setIsQueriesLoaded] = useState(false);
   const [isCouponsLoaded, setIsCouponsLoaded] = useState(false);
-  const [isLogsLoaded, setIsLogsLoaded] = useState(false);
 
   // Fetch Actions
   const fetchDashboardData = useCallback(async (silent = false) => {
@@ -434,21 +418,6 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [supabase]);
 
-  const fetchLogs = useCallback(async (silent = false) => {
-    if (!silent) setLoadingLogs(true);
-    try {
-      const response = await fetch("/api/admin/logs");
-      if (!response.ok) throw new Error("Failed to load audit logs");
-      const data = await response.json();
-      setLogs(data as AuditLog[]);
-      setIsLogsLoaded(true);
-    } catch (err) {
-      console.error("Logs fetch error:", err);
-    } finally {
-      setLoadingLogs(false);
-    }
-  }, []);
-
   const contextValue = useMemo(
     () => ({
       loadingDashboard,
@@ -457,14 +426,12 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       loadingUsers,
       loadingQueries,
       loadingCoupons,
-      loadingLogs,
       isDashboardLoaded,
       isProductsLoaded,
       isOrdersLoaded,
       isUsersLoaded,
       isQueriesLoaded,
       isCouponsLoaded,
-      isLogsLoaded,
       dashboardStats,
       recentOrders,
       recentPayments,
@@ -475,20 +442,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addresses,
       queries,
       coupons,
-      logs,
       fetchDashboardData,
       fetchProducts,
       fetchOrders,
       fetchUsers,
       fetchQueries,
       fetchCoupons,
-      fetchLogs,
       setProducts,
       setOrders,
       setUsers,
       setQueries,
       setCoupons,
-      setLogs,
     }),
     [
       loadingDashboard,
@@ -497,14 +461,12 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       loadingUsers,
       loadingQueries,
       loadingCoupons,
-      loadingLogs,
       isDashboardLoaded,
       isProductsLoaded,
       isOrdersLoaded,
       isUsersLoaded,
       isQueriesLoaded,
       isCouponsLoaded,
-      isLogsLoaded,
       dashboardStats,
       recentOrders,
       recentPayments,
@@ -515,14 +477,17 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addresses,
       queries,
       coupons,
-      logs,
       fetchDashboardData,
       fetchProducts,
       fetchOrders,
       fetchUsers,
       fetchQueries,
       fetchCoupons,
-      fetchLogs,
+      setProducts,
+      setOrders,
+      setUsers,
+      setQueries,
+      setCoupons,
     ]
   );
 

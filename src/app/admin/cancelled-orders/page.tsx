@@ -396,7 +396,12 @@ export default function CancelledOrdersPage() {
                 filteredOrders.map((o, idx) => {
                   const payment = o.payments?.[0];
                   const refundId = payment?.raw_webhook_payload?.refund_id || "N/A";
-                  const reason = payment?.raw_webhook_payload?.reason || "Customer cancelled from profile dashboard";
+                  const reason =
+                    (o as any).cancellation_reason ||
+                    (o as any).cancel_reason ||
+                    payment?.raw_webhook_payload?.user_reason ||
+                    payment?.raw_webhook_payload?.reason ||
+                    "No reason specified";
                   const isOnlineRefund = payment?.gateway === "razorpay" || o.status === "refunded";
 
                   return (
