@@ -18,7 +18,7 @@ function ContactUsContent() {
     email: "",
     phone: "",
     company: "",
-    quantity: "250g-jars",
+    quantity: "bulk-honey",
     message: "",
   });
 
@@ -28,23 +28,29 @@ function ContactUsContent() {
 
   useEffect(() => {
     const inquiryType = searchParams?.get("inquiry");
-    if (inquiryType === "bulk") {
+    if (inquiryType === "bulk" || inquiryType === "bulk-honey") {
       setFormData((prev) => ({
         ...prev,
-        quantity: "bulk-wholesale",
-        message: "Hello, I am interested in placing a bulk order for VanBasket raw honey. Please provide pricing details.",
+        quantity: "bulk-honey",
+        message: "Hello, I am interested in bulk orders of Wild Forest Honey. Please provide wholesale pricing details.",
       }));
-    } else if (inquiryType === "jamun-pulp") {
+    } else if (inquiryType === "white-label" || inquiryType === "white-labelling") {
       setFormData((prev) => ({
         ...prev,
-        quantity: "bulk-wholesale",
+        quantity: "white-labelling",
+        message: "Hello, I am interested in White Labelling and Private Branding options with VanBasket. Please share product specifications and custom branding minimum order quantities.",
+      }));
+    } else if (inquiryType === "jamun-pulp" || inquiryType === "bulk-jamun-pulp") {
+      setFormData((prev) => ({
+        ...prev,
+        quantity: "bulk-jamun-pulp",
         message: "Hello, I am interested in bulk orders of Jamun Pulp. Please share product specifications and wholesale pricing.",
       }));
-    } else if (inquiryType === "bulk-honey") {
+    } else if (inquiryType === "other") {
       setFormData((prev) => ({
         ...prev,
-        quantity: "bulk-wholesale",
-        message: "Hello, I am interested in bulk orders of Wild Forest Honey. Please provide bulk pricing and lead times.",
+        quantity: "other",
+        message: "Hello, I have a general inquiry regarding VanBasket products.",
       }));
     }
   }, [searchParams]);
@@ -239,10 +245,12 @@ function ContactUsContent() {
                     onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                     className="w-full h-11 px-4 rounded-xl border border-brand-cream-dark/80 bg-brand-cream-light/40 focus:border-brand-honey focus:outline-none text-xs font-sans"
                   >
-                    <option value="250g-jars">250g Individual Jars (Qty 10+)</option>
-                    <option value="500g-jars">500g Signature Jars (Qty 10+)</option>
-                    <option value="bulk-wholesale">Bulk Industrial Buckets (Wholesale)</option>
-                    <option value="custom-event">Custom Events & Catering</option>
+                    <option value="bulk-honey">Bulk Honey (Wholesale Reserve)</option>
+                    <option value="white-labelling">White Labelling & Private Brand</option>
+                    <option value="bulk-jamun-pulp">Bulk Jamun Pulp (Industrial Reserve)</option>
+                    <option value="retail-jars">250g / 500g Retail Jars (Qty 10+)</option>
+                    <option value="custom-events">Custom Events & Corporate Gifting</option>
+                    <option value="other">Other Inquiry</option>
                   </select>
                 </div>
 
