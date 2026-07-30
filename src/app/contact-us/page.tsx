@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { ArrowLeft, Send, CheckCircle2, PhoneCall, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Send, CheckCircle2, PhoneCall, ShieldCheck, Mail } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useSearchParams } from "next/navigation";
@@ -135,6 +135,21 @@ function ContactUsContent() {
                 <div>
                   <h4 className="text-[10px] font-sans font-bold uppercase tracking-wider">Direct Hotline</h4>
                   <p className="text-[11px] font-sans text-brand-espresso-muted mt-0.5">+91 77249 69017</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3.5">
+                <div className="w-9 h-9 rounded-full bg-brand-honey/10 flex items-center justify-center text-brand-honey">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-[10px] font-sans font-bold uppercase tracking-wider">Email Us</h4>
+                  <p className="text-[11px] font-sans text-brand-espresso-muted mt-0.5">
+                    <a href="mailto:vanbasket526@gmail.com" className="hover:underline">vanbasket526@gmail.com</a>
+                  </p>
+                  <p className="text-[11px] font-sans text-brand-espresso-muted">
+                    <a href="mailto:greenorganics526@gmail.com" className="hover:underline">greenorganics526@gmail.com</a>
+                  </p>
                 </div>
               </div>
 

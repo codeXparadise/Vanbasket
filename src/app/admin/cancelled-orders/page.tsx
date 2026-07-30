@@ -564,7 +564,11 @@ export default function CancelledOrdersPage() {
                 <p>
                   <strong>Reason Provided:</strong>{" "}
                   <span className="font-semibold text-amber-950">
-                    {selectedOrder.payments?.[0]?.raw_webhook_payload?.reason || "Customer cancelled order from profile dashboard"}
+                    {(selectedOrder as any).cancellation_reason ||
+                     (selectedOrder as any).cancel_reason ||
+                     selectedOrder.payments?.[0]?.raw_webhook_payload?.user_reason ||
+                     selectedOrder.payments?.[0]?.raw_webhook_payload?.reason ||
+                     "Cancelled by customer"}
                   </span>
                 </p>
                 {selectedOrder.payments?.[0]?.raw_webhook_payload?.refund_id && (
