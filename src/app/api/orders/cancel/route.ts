@@ -140,7 +140,6 @@ export async function POST(request: Request) {
       .from("orders")
       .update({
         status: finalStatus,
-        cancellation_reason: userInputReason,
         updated_at: cancelledTimestamp,
       })
       .eq("id", order.id);
