@@ -59,21 +59,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const syncUnreadQueriesCount = useCallback(async () => {
     try {
-      const response = await fetch("/api/admin/queries");
-      if (response.ok) {
-        const queryData = await response.json();
+      const { data: queryData } = await supabase
+        .from("contact_queries")
+        .select("id");
+
+      if (queryData) {
         let readIds: string[] = [];
         try {
           readIds = JSON.parse(localStorage.getItem("admin_read_queries") || "[]");
         } catch {}
 
-        const unread = (queryData as { id: string }[]).filter((q) => !readIds.includes(q.id));
+        const unread = queryData.filter((q) => !readIds.includes(q.id));
         setUnreadQueriesCount(unread.length);
       }
     } catch (err) {
       console.error("Failed to sync unread queries count:", err);
     }
-  }, []);
+  }, [supabase]);
 
   // Web Audio double-chime beep
   const playBeep = () => {
