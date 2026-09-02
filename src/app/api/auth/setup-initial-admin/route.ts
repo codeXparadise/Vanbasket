@@ -4,6 +4,20 @@ import { createServiceRoleClient } from "@/utils/supabase/service-role";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+
+    // Secure endpoint in production by requiring a setup token
+    const setupToken = body?.setupToken || request.headers.get("x-setup-token");
+    const expectedToken = process.env.SETUP_ADMIN_TOKEN;
+
+    if (process.env.NODE_ENV === "production") {
+      if (!expectedToken || setupToken !== expectedToken) {
+        return NextResponse.json({ error: "Forbidden: Invalid or missing setup token" }, { status: 403 });
+      }
+    } else if (expectedToken && setupToken !== expectedToken) {
+        // Enforce token in dev if it's set
+        return NextResponse.json({ error: "Forbidden: Invalid setup token" }, { status: 403 });
+    }
+
     const email = body?.email || "smartyvishalprajapati@gmail.com";
     const password = body?.password || "123456";
     const fullName = body?.fullName || "Vishal Prajapati";
