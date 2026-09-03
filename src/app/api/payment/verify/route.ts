@@ -15,19 +15,29 @@ export async function POST(request: Request) {
     razorpay_payment_id = body?.razorpay_payment_id;
     razorpay_signature = body?.razorpay_signature;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    if (!razorpay_order_id || !razorpay_payment_id || typeof razorpay_signature !== "string") {
       return NextResponse.json({ error: "Missing verification parameters." }, { status: 400 });
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || "l9qpaUbLSGef0cxkzQocQYqv";
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    // 1. Verify Razorpay signature using HMAC SHA256
+    if (!keySecret) {
+      console.error("Critical: RAZORPAY_KEY_SECRET is not configured.");
+      return NextResponse.json({ error: "Server misconfiguration." }, { status: 500 });
+    }
+
+    // 1. Verify Razorpay signature using HMAC SHA256 (Timing-Safe)
     const expectedSignature = crypto
       .createHmac("sha256", keySecret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    const isSignatureValid = expectedSignature === razorpay_signature;
+    const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+    const receivedBuffer = Buffer.from(razorpay_signature, "utf8");
+
+    const isSignatureValid =
+      expectedBuffer.length === receivedBuffer.length &&
+      crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
 
     if (!isSignatureValid) {
       // Find internal payment and order to mark them as failed

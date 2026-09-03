@@ -7,7 +7,7 @@ if (!keyId || !keySecret) {
   console.warn("Razorpay environment variables are not defined. Check your .env.local file.");
 }
 
-export const razorpay = new Razorpay({
-  key_id: keyId || "rzp_test_T6F3LtF1tbHeC4",
-  key_secret: keySecret || "l9qpaUbLSGef0cxkzQocQYqv",
-});
+export const razorpay = (keyId && keySecret) ? new Razorpay({
+  key_id: keyId,
+  key_secret: keySecret,
+}) : {} as Razorpay;
