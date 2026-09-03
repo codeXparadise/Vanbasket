@@ -11,20 +11,28 @@ export async function POST(request: Request) {
     signature = request.headers.get("x-razorpay-signature") || "";
     rawBody = await request.text();
 
-    if (!signature) {
+    if (typeof signature !== "string" || !signature) {
       console.warn("Webhook signature missing. Ignoring request.");
       return NextResponse.json({ error: "Missing signature header." }, { status: 400 });
     }
 
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "razorpay_webhook_secret_123";
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    // 1. Verify webhook signature
+    if (!webhookSecret) {
+      console.error("Critical: RAZORPAY_WEBHOOK_SECRET is not configured.");
+      return NextResponse.json({ error: "Server misconfiguration." }, { status: 500 });
+    }
+
+    // 1. Verify webhook signature (Timing-Safe)
     const expectedSignature = crypto
       .createHmac("sha256", webhookSecret)
       .update(rawBody)
       .digest("hex");
 
-    if (expectedSignature !== signature) {
+    const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+    const receivedBuffer = Buffer.from(signature, "utf8");
+
+    if (expectedBuffer.length !== receivedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, receivedBuffer)) {
       console.warn("Invalid webhook signature mismatch. Ignoring request.");
       return NextResponse.json({ error: "Signature verification failed." }, { status: 400 });
     }
