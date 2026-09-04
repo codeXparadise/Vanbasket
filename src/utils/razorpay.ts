@@ -8,6 +8,6 @@ if (!keyId || !keySecret) {
 }
 
 export const razorpay = new Razorpay({
-  key_id: keyId || "rzp_test_T6F3LtF1tbHeC4",
-  key_secret: keySecret || "l9qpaUbLSGef0cxkzQocQYqv",
+  key_id: keyId || "DUMMY_KEY_FOR_BUILD",
+  key_secret: keySecret || "DUMMY_SECRET_FOR_BUILD",
 });

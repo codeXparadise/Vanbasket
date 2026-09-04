@@ -303,6 +303,26 @@ export async function POST(request: Request) {
     }
 
     // 8. Create Razorpay order
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      // Rollback order database rows and stock
+      // Restore stock
+      for (const item of typedCartItems) {
+        const dbVariant = dbVariantsTyped.find((v) => v.id === item.id);
+        if (dbVariant) {
+          await adminSupabase
+            .from("product_variants")
+            .update({ stock_qty: dbVariant.stock_qty })
+            .eq("id", item.id);
+        }
+      }
+      await adminSupabase.from("orders").delete().eq("id", orderData.id);
+
+      return NextResponse.json(
+        { error: `Server configuration error: Missing Razorpay credentials.` },
+        { status: 500 }
+      );
+    }
+
     let razorpayOrder;
     try {
       razorpayOrder = await razorpay.orders.create({

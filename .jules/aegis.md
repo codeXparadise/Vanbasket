@@ -1,0 +1,4 @@
+## 2024-09-04 - Hardcoded Razorpay Secrets
+**Category:** Security
+**Learning / Vulnerability:** Razorpay keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`) were hardcoded as fallbacks across multiple files (`src/app/checkout/page.tsx`, `src/utils/razorpay.ts`, `src/app/api/payment/verify/route.ts`, `src/app/api/webhooks/razorpay/route.ts`). Hardcoding secrets, even as fallbacks, exposes them to attackers if the source code is compromised, and can lead to unauthorized payment actions or webhook forging.
+**Action / Prevention:** Removed hardcoded fallbacks and replaced them with runtime errors or warnings if environment variables are missing. Always rely exclusively on environment variables for sensitive credentials and validate their presence at startup or usage time.
