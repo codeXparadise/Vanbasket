@@ -27,7 +27,14 @@ export async function POST(request: Request) {
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    const isSignatureValid = expectedSignature === razorpay_signature;
+    // Prevent timing attacks by using constant-time comparison
+    let isSignatureValid = false;
+    if (typeof razorpay_signature === "string") {
+      const expectedBuf = Buffer.from(expectedSignature, "hex");
+      const receivedBuf = Buffer.from(razorpay_signature, "hex");
+      isSignatureValid = expectedBuf.length === receivedBuf.length &&
+        crypto.timingSafeEqual(expectedBuf, receivedBuf);
+    }
 
     if (!isSignatureValid) {
       // Find internal payment and order to mark them as failed
