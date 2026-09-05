@@ -1,0 +1,4 @@
+## 2024-05-18 - Prevent Timing Attacks in Signature Verification
+**Category:** Security - High
+**Learning / Vulnerability:** Razorpay signature verification currently uses `===` (or `!==`) to compare HMAC signatures. This standard equality operator fails fast if there is a mismatch at any character, leaking timing information. An attacker can repeatedly probe the endpoint with varying signatures and use the response time to guess the correct signature byte by byte. This is a classic timing attack vulnerability.
+**Action / Prevention:** Use Node's built-in `crypto.timingSafeEqual()` to compare sensitive strings (like hashes, HMACs, or tokens). Since `timingSafeEqual` expects buffers of the same length, first verify the lengths match and then compare buffers in constant time. This completely neutralizes timing side-channel attacks on signature validation.

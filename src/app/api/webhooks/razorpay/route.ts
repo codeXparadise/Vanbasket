@@ -24,7 +24,16 @@ export async function POST(request: Request) {
       .update(rawBody)
       .digest("hex");
 
-    if (expectedSignature !== signature) {
+    // Prevent timing attacks by using constant-time comparison
+    let isSignatureValid = false;
+    if (typeof signature === "string") {
+      const expectedBuf = Buffer.from(expectedSignature, "hex");
+      const receivedBuf = Buffer.from(signature, "hex");
+      isSignatureValid = expectedBuf.length === receivedBuf.length &&
+        crypto.timingSafeEqual(expectedBuf, receivedBuf);
+    }
+
+    if (!isSignatureValid) {
       console.warn("Invalid webhook signature mismatch. Ignoring request.");
       return NextResponse.json({ error: "Signature verification failed." }, { status: 400 });
     }
