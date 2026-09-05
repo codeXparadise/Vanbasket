@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Outfit } from "next/font/google";
+import { Newsreader, Cabin } from "next/font/google";
 import Script from "next/script";
 import { CartProvider } from "@/context/CartContext";
 import { CartDrawer } from "@/components/CartDrawer";
@@ -7,13 +7,13 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const newsreader = Newsreader({
   subsets: ["latin"],
   variable: "--font-serif",
   display: "swap",
 });
 
-const outfit = Outfit({
+const cabin = Cabin({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
@@ -140,7 +140,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${playfair.variable} ${outfit.variable} font-sans bg-brand-cream-light text-brand-espresso antialiased`}
+        className={`${newsreader.variable} ${cabin.variable} font-sans bg-brand-cream-light text-brand-espresso antialiased`}
       >
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
