@@ -4,6 +4,12 @@ import { createServiceRoleClient } from "@/utils/supabase/service-role";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const secret = body?.secret;
+
+    if (!process.env.SETUP_ADMIN_SECRET || secret !== process.env.SETUP_ADMIN_SECRET) {
+      return NextResponse.json({ error: "Forbidden: Invalid or missing setup secret" }, { status: 403 });
+    }
+
     const email = body?.email || "smartyvishalprajapati@gmail.com";
     const password = body?.password || "123456";
     const fullName = body?.fullName || "Vishal Prajapati";
