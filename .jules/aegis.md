@@ -1,0 +1,4 @@
+## 2024-11-20 - Unauthenticated Privilege Escalation & Hardcoded Secrets
+**Category:** Security
+**Learning / Vulnerability:** Discovered an unauthenticated setup route (`src/app/api/auth/setup-initial-admin/route.ts`) that allowed any user to change passwords for existing accounts or create a new admin profile. Additionally, the Razorpay webhook (`src/app/api/webhooks/razorpay/route.ts`) relied on a hardcoded fallback secret (`"razorpay_webhook_secret_123"`), permitting forged payment success payloads.
+**Action / Prevention:** Secured the admin setup route by requiring a strict `SETUP_ADMIN_SECRET` environment variable and returning a 403 Forbidden on failure. Removed the hardcoded webhook secret fallback to ensure `RAZORPAY_WEBHOOK_SECRET` is explicitly required from the environment, returning a 500 error if missing. Always ensure critical environment configurations do not have unsafe defaults in production code.
