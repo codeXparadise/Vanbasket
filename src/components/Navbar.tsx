@@ -226,26 +226,26 @@ export const Navbar = () => {
           }`}
         >
           <div>
-            <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center justify-between mb-8 sm:mb-10">
               <span className="font-serif text-base font-black tracking-wider lowercase text-brand-espresso">
-                van bakset<span className="text-brand-honey">.</span>
+                van basket<span className="text-brand-honey">.</span>
               </span>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-brand-espresso/70 hover:text-brand-espresso p-1.5 focus:outline-none"
+                className="text-brand-espresso/70 hover:text-brand-espresso p-2 focus:outline-none cursor-pointer"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <nav className="flex flex-col space-y-5">
+            <nav className="flex flex-col space-y-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-sm font-sans font-bold uppercase tracking-wider text-brand-espresso hover:text-brand-honey transition-colors py-1.5 border-b border-brand-cream-dark/30"
+                  className="text-sm font-sans font-bold uppercase tracking-wider text-brand-espresso hover:text-brand-honey transition-colors py-2 border-b border-brand-cream-dark/30"
                 >
                   {link.name}
                 </Link>
@@ -253,7 +253,7 @@ export const Navbar = () => {
               <Link
                 href={user ? "/profile" : "/login"}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-sm font-sans font-bold uppercase tracking-wider text-brand-espresso hover:text-brand-honey transition-colors py-1.5 border-b border-brand-cream-dark/30"
+                className="text-sm font-sans font-bold uppercase tracking-wider text-brand-espresso hover:text-brand-honey transition-colors py-2 border-b border-brand-cream-dark/30"
               >
                 {user ? `Account (${getFirstName(profileName || user.email || "User")})` : "Sign In / Register"}
               </Link>
@@ -261,8 +261,8 @@ export const Navbar = () => {
           </div>
 
           <div className="border-t border-brand-cream-dark/40 pt-5">
-            <p className="text-[10px] uppercase tracking-widest text-brand-espresso/50 mb-2">
-              Van Bakset apothecary
+            <p className="text-[10px] uppercase tracking-widest text-brand-espresso/50 mb-2 font-bold">
+              Van Basket Apothecary
             </p>
             <p className="text-xs text-brand-espresso-muted leading-relaxed font-light">
               Premium Wild Forest Honey from Chhattisgarh, sustainably harvested and packed for modern wellness.

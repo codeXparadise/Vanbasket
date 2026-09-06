@@ -6,11 +6,7 @@ import Image from "next/image";
 import { Award, Mail, Phone, MapPin } from "lucide-react";
 
 export const Footer = () => {
-  const [currentYear, setCurrentYear] = useState<number | null>(null);
-
-  useEffect(() => {
-    setCurrentYear(new Date().getFullYear());
-  }, []);
+  const [currentYear] = useState<number>(() => new Date().getFullYear());
 
   return (
     <footer className="relative overflow-hidden bg-brand-espresso py-20 text-brand-cream-light">

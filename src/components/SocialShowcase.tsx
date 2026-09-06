@@ -29,10 +29,10 @@ const reelsData = [
 ];
 
 const postsData = [
-  { src: "/assets/SaveInta.com_671236435_18088753934113038_2584356244027066964_n.jpg", likes: "1,240", caption: "Single-origin nectar straight from biosphere reserves." },
-  { src: "/assets/SaveInta.com_693245979_17863277364686116_710550687666494002_n.jpg", likes: "982", caption: "Preserving ancient tribal beekeeping legacy." },
-  { src: "/assets/SaveInta.com_694298566_18088759847113038_4397863112803506586_n.jpg", likes: "1,530", caption: "Glass jars designed to protect enzymes." },
-  { src: "/assets/SaveInta.com_696917302_18056116802539579_2100519194037541284_n.jpg", likes: "845", caption: "Unprocessed. Organic. Raw." },
+  { src: "/assets/instagram%20Post/insta-post1.jpg", likes: "1,240", caption: "Single-origin nectar straight from biosphere reserves." },
+  { src: "/assets/instagram%20Post/insta-post2.jpg", likes: "982", caption: "Preserving ancient tribal beekeeping legacy." },
+  { src: "/assets/instagram%20Post/SaveInta.com_694298566_18088759847113038_4397863112803506586_n.jpg", likes: "1,530", caption: "Glass jars designed to protect enzymes." },
+  { src: "/assets/instagram%20Post/SaveInta.com_696917302_18056116802539579_2100519194037541284_n.jpg", likes: "845", caption: "Unprocessed. Organic. Raw." },
 ];
 
 export const SocialShowcase = () => {

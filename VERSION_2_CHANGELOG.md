@@ -66,7 +66,7 @@ Version 2.0 brings major enhancements to production readiness, admin customer an
 ### 3. 🔐 Registration & Auth Enhancements
 - **Mandatory Phone Number**: Phone validation enforced on signup API (`src/app/api/auth/signup/route.ts`).
 - **Existing Email Handler**: Displays explicit warning `"This email address is already registered. Please log in to your account instead."` if an existing user attempts to re-register.
-- **One-Click Sign In**: Added a direct `"Click Here To Sign In"` button inside the error alert box on `src/app/login/page.tsx`.
+- **One-Click Sign In**: Added a direct `"Click Here To Sign In"` button inside the error halert box on `src/app/login/page.tsx`.
 
 ---
 

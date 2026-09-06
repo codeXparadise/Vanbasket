@@ -11,12 +11,12 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: `
       default-src 'self';
-      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://www.googletagmanager.com;
+      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://www.googletagmanager.com https://unpkg.com;
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: blob: https:;
       font-src 'self' data:;
       connect-src 'self' https:;
-      frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com;
+      frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://www.google.com https://maps.google.com https://*.google.com;
       frame-ancestors 'none';
     `.replace(/\s{2,}/g, ' ').trim()
   }

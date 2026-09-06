@@ -240,6 +240,16 @@ body.scroll-locked {
   animation: slowZoom 20s ease-in-out infinite;
 }
 
+/* Marching animated dashed border on hover */
+@keyframes marchingDash {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -28; }
+}
+.animate-dash-border {
+  stroke-dasharray: 8 6;
+  animation: marchingDash 1.2s linear infinite;
+}
+
 /* Custom loading, success checkmark, and failure animations */
 @keyframes checkmarkDraw {
   0% { stroke-dashoffset: 48; }

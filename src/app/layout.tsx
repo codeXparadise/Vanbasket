@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Newsreader, Cabin } from "next/font/google";
 import Script from "next/script";
 import { CartProvider } from "@/context/CartContext";
@@ -21,6 +21,13 @@ const cabin = Cabin({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vanbasket.com";
 const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_ID || "G-5DNL355BVQ";
+
+export const viewport: Viewport = {
+  themeColor: "#fff8d8",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

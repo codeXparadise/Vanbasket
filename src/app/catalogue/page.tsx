@@ -33,7 +33,7 @@ const staticProducts: ProductCard[] = [
     slug: "raw-wildflower-honey",
     name: "Raw Wildflower Honey",
     description: "Apis dorsata raw wild honey gathered from wild tree hives in the deep forests of Chhattisgarh. Rich in antioxidants and natural pollen.",
-    image: "/assets/product-1.jpg",
+    image: "/assets/product/250g%20Honey/product-1.png",
     tags: ["100% Pure Sourced", "Forest Harvested"],
     variants: [
       { id: "a1111111-1111-1111-1111-111111111111", size_label: "250g", price: 349, stock_qty: 99, is_active: true },
@@ -41,23 +41,25 @@ const staticProducts: ProductCard[] = [
     ],
   },
   {
-    id: "bulk-honey",
-    slug: "bulk-honey",
-    name: "Bulk Order of Honey",
-    description: "Ethically gathered pure forest honey in bulk quantities. Ideal for retail brands, distribution partners, and wholesale commercial needs.",
-    image: "/assets/bulk-honey-order.jpg",
-    inquiryOnly: true,
-    tags: ["B2B wholesale", "Bulk Quantities"],
-    variants: [],
-  },
-  {
     id: "jamun-pulp",
     slug: "jamun-pulp",
-    name: "Jamun Pulp",
-    description: "Seasonal natural jamun pulp, carefully processed to preserve taste, nutrients, and health properties. Available on direct business inquiry.",
-    image: "/assets/jamun-pulp-bulk.jpg",
+    name: "Pure Wild Jamun Pulp",
+    description: "100% natural, thick, seedless forest Jamun pulp harvested from seasonal wild trees of Chhattisgarh for sugar balance, digestion, and vitality.",
+    image: "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png",
+    inquiryOnly: false,
+    tags: ["100% Forest Harvest", "Seasonal Superfood"],
+    variants: [
+      { id: "e1111111-1111-1111-1111-111111111111", size_label: "1 kg", price: 499, stock_qty: 100, is_active: true },
+    ],
+  },
+  {
+    id: "bulk-honey",
+    slug: "bulk-honey",
+    name: "Bulk Honey & Jamun Pulp",
+    description: "Ethically gathered pure forest honey & Jamun pulp in bulk drums (25kg - 200kg). Ideal for commercial brands, ayurveda, and wholesale export.",
+    image: "/assets/product/bulk%20Honey/bulk-honey-order.jpg",
     inquiryOnly: true,
-    tags: ["B2B wholesale", "Seasonal Harvest"],
+    tags: ["B2B Wholesale", "Commercial Drums"],
     variants: [],
   },
 ];
@@ -89,7 +91,7 @@ export default function CataloguePage() {
       <main className="flex-grow pt-28 pb-24 px-6 md:px-12 max-w-7xl mx-auto w-full">
         {/* Banner Section */}
         <div className="relative mb-14 min-h-[300px] md:min-h-[380px] overflow-hidden bg-brand-espresso text-brand-cream-light flex items-end p-8 md:p-14 rounded-[2.5rem]">
-          <Image src="/assets/hero-bg.png" alt="Wild forest honey" fill sizes="100vw" className="object-cover opacity-70" />
+          <Image src="/assets/hero/catalogue/vanbasket-catalogue-hero.jpg" alt="Wild forest honey" fill sizes="100vw" className="object-cover opacity-70" />
           <div className="absolute inset-0 bg-gradient-to-r from-brand-espresso/90 to-transparent" />
           <div className="relative z-10 space-y-4 max-w-xl">
             <span className="text-[10px] font-sans font-bold uppercase tracking-[0.3em] text-brand-terracotta">van basket catalogue</span>

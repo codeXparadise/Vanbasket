@@ -691,11 +691,11 @@ export default function ProfilePage() {
 
   // Mappings for product ordered images
   const getProductImage = (item?: OrderItem | string | null) => {
-    if (!item) return "/assets/product-1.jpg";
+    if (!item) return "/assets/product/250g%20Honey/product-1.png";
     const name = typeof item === "string" ? item.toLowerCase() : (item.product_name_snapshot || "").toLowerCase();
-    if (name.includes("jamun") || name.includes("pulp")) return "/assets/jamun-pulp-bulk.jpg";
-    if (name.includes("bulk")) return "/assets/bulk-honey-order.jpg";
-    return "/assets/product-1.jpg";
+    if (name.includes("jamun") || name.includes("pulp")) return "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png";
+    if (name.includes("bulk")) return "/assets/product/bulk%20Honey/bulk-honey-order.jpg";
+    return "/assets/product/250g%20Honey/product-1.png";
   };
 
   const getTabLabel = (tab: TabType) => {
@@ -1771,7 +1771,7 @@ export default function ProfilePage() {
                                 <div className="flex items-center gap-3">
                                   <div className="w-12 h-12 bg-brand-cream-light rounded-xl border border-brand-cream-dark/40 overflow-hidden flex items-center justify-center p-1 shrink-0">
                                     <Image
-                                      src="/assets/product-jar-1.png"
+                                      src="/assets/product/250g%20Honey/product-1.png"
                                       alt={productName}
                                       width={48}
                                       height={48}

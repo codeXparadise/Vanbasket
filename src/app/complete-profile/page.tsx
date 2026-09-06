@@ -83,7 +83,7 @@ function CompleteProfileContent() {
         
         <div className="flex flex-col items-center mb-8">
           <Link href="/" className="h-10 w-32 relative text-brand-espresso mb-4">
-            <Image src="/assets/logo.svg" alt="VAN" fill sizes="128px" className="object-contain" />
+            <Image src="/logo.svg" alt="VAN" fill sizes="128px" className="object-contain" />
           </Link>
           <h1 className="font-serif text-2xl font-bold text-center">Complete Profile</h1>
           <p className="font-sans text-xs text-brand-espresso-muted text-center mt-1">

@@ -31,7 +31,7 @@ export async function generateMetadata(props: {
   const image = isBulk
     ? `${siteUrl}/assets/bulk-honey-order.jpg`
     : isJamun
-    ? `${siteUrl}/assets/jamun-pulp-bulk.jpg`
+    ? `${siteUrl}/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png`
     : `${siteUrl}/assets/product-1.jpg`;
 
   return {
@@ -85,7 +85,7 @@ export default async function ProductDetailLayout(props: LayoutProps) {
   const productImage = isBulk
     ? `${siteUrl}/assets/bulk-honey-order.jpg`
     : isJamun
-    ? `${siteUrl}/assets/jamun-pulp-bulk.jpg`
+    ? `${siteUrl}/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png`
     : `${siteUrl}/assets/product-1.jpg`;
 
   const price = isBulk ? "10000.00" : isJamun ? "500.00" : "349.00";

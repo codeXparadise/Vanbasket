@@ -53,13 +53,14 @@ interface OrderResult {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cartItems, cartTotal, clearCart } = useCart();
+  const { cartItems, cartTotal, clearCart, addToCartBatch } = useCart();
   const [supabase] = useState(() => createClient());
 
   const [activeStep, setActiveStep] = useState(0); // 0: Shipping, 1: Payment, 2: Review, 3: Success
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isResolvingVariant, setIsResolvingVariant] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
@@ -220,7 +221,11 @@ export default function CheckoutPage() {
         const { data: { user: authUser } } = await supabase.auth.getUser();
 
         if (!authUser) {
-          router.push(`/login?redirect=${encodeURIComponent("/checkout")}`);
+          const currentPath =
+            typeof window !== "undefined"
+              ? window.location.pathname + window.location.search
+              : "/checkout";
+          router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
           return;
         }
 
@@ -237,6 +242,56 @@ export default function CheckoutPage() {
         }
 
         await fetchAddresses(authUser.id);
+
+        // Check for direct variant query parameter in URL (e.g. /checkout?variant=<id>)
+        if (typeof window !== "undefined") {
+          const urlParams = new URLSearchParams(window.location.search);
+          const variantParam = urlParams.get("variant") || urlParams.get("id");
+          if (variantParam) {
+            const hasVariant = cartItems.some((item) => item.id === variantParam);
+            if (!hasVariant) {
+              setIsResolvingVariant(true);
+              const { data: vData } = await supabase
+                .from("product_variants")
+                .select("id, size_label, price, product_id, products(name, slug)")
+                .eq("id", variantParam)
+                .maybeSingle();
+
+              if (vData) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const prodName = (vData.products as any)?.name || "Wild Forest Honey";
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const prodSlug = (vData.products as any)?.slug || "";
+                let itemImage = "/assets/product/250g%20Honey/product-1.png";
+                if (prodSlug === "jamun-pulp" || vData.size_label.toLowerCase().includes("jamun")) {
+                  itemImage = "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png";
+                } else if (
+                  prodSlug === "gift-hampers" ||
+                  vData.size_label.toLowerCase().includes("hamper") ||
+                  vData.size_label.toLowerCase().includes("assorted")
+                ) {
+                  itemImage = "/assets/instagram%20Post/post_1.jpg";
+                } else if (vData.size_label === "250g") {
+                  itemImage = "/assets/product/250g%20Honey/product-2.jpg";
+                } else if (vData.size_label === "1kg") {
+                  itemImage = "/assets/product/250g%20Honey/product-3.jpg";
+                }
+
+                addToCartBatch(
+                  {
+                    id: vData.id,
+                    name: prodName,
+                    variant: vData.size_label,
+                    price: Number(vData.price),
+                    image: itemImage,
+                  },
+                  1
+                );
+              }
+              setIsResolvingVariant(false);
+            }
+          }
+        }
       } catch (err) {
         console.error("initCheckout error:", err);
         setError("Failed to load checkout settings.");
@@ -245,7 +300,7 @@ export default function CheckoutPage() {
       }
     };
     initCheckout();
-  }, [router, supabase, fetchAddresses]);
+  }, [router, supabase, fetchAddresses, cartItems, addToCartBatch]);
 
   const handleAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -563,7 +618,7 @@ export default function CheckoutPage() {
     safeNavigate("/");
   };
 
-  if (isLoadingAuth) {
+  if ((isLoadingAuth || isResolvingVariant) && activeStep < 3) {
     return (
       <div className="min-h-screen bg-brand-cream-light text-brand-espresso px-6 md:px-12 py-10">
         <div className="max-w-7xl mx-auto">
@@ -589,14 +644,14 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-brand-cream-light text-brand-espresso flex flex-col items-center justify-center p-6 text-center">
         <div className="mb-6 w-32 h-10 relative">
-          <Image src="/assets/logo.svg" alt="VAN" fill sizes="128px" className="object-contain" />
+          <Image src="/logo.svg" alt="VAN" fill sizes="128px" className="object-contain" />
         </div>
         <h1 className="font-serif text-2xl font-bold mb-2">Your checkout is empty</h1>
         <p className="font-sans text-xs text-brand-espresso-muted mb-6 max-w-sm">
-          Please add wildflower honey variants to your selection before checking out.
+          Please add wildflower honey or forest harvest variants to your selection before checking out.
         </p>
         <button
-          onClick={() => safeNavigate("/catalogue")}
+          onClick={() => safeNavigate("/")}
           className="px-8 py-4 bg-brand-espresso text-brand-cream-light font-sans font-bold uppercase tracking-[0.2em] text-xs rounded-full hover:bg-brand-espresso/90 transition-all duration-300 shadow-md cursor-pointer"
         >
           Return to Shop
@@ -657,7 +712,7 @@ export default function CheckoutPage() {
               className="h-8 w-24 relative text-brand-espresso cursor-pointer ml-1"
               aria-label="Go to homepage"
             >
-              <Image src="/assets/logo.svg" alt="VAN BASKET" fill sizes="96px" className="object-contain" />
+              <Image src="/logo.svg" alt="VAN BASKET" fill sizes="96px" className="object-contain" />
             </div>
           </div>
 
