@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
-import { Check, Mail, Plus, MessageSquare, Phone } from "lucide-react";
+import { Check, Mail, Plus, MessageSquare, Phone, Truck } from "lucide-react";
 
 interface VariantCard {
   id: string;
@@ -25,6 +25,7 @@ interface ProductCard {
   variants: VariantCard[];
   inquiryOnly?: boolean;
   tags?: string[];
+  freeShipping?: boolean;
 }
 
 const staticProducts: ProductCard[] = [
@@ -34,10 +35,13 @@ const staticProducts: ProductCard[] = [
     name: "Raw Wildflower Honey",
     description: "Apis dorsata raw wild honey gathered from wild tree hives in the deep forests of Chhattisgarh. Rich in antioxidants and natural pollen.",
     image: "/assets/product/250g%20Honey/product-1.png",
-    tags: ["100% Pure Sourced", "Forest Harvested"],
+    tags: ["100% Pure Sourced", "Forest Harvested", "Free Shipping"],
+    freeShipping: true,
     variants: [
-      { id: "a1111111-1111-1111-1111-111111111111", size_label: "250g", price: 349, stock_qty: 99, is_active: true },
-      { id: "b2222222-2222-2222-2222-222222222222", size_label: "500g", price: 599, stock_qty: 99, is_active: true },
+      { id: "a1111111-1111-1111-1111-111111111111", size_label: "250g", price: 229, stock_qty: 99, is_active: true },
+      { id: "b2222222-2222-2222-2222-222222222222", size_label: "500g", price: 429, stock_qty: 99, is_active: true },
+      { id: "c3333333-3333-3333-3333-333333333333", size_label: "1kg", price: 1099, stock_qty: 99, is_active: true },
+      { id: "c5555555-5555-5555-5555-555555555555", size_label: "5kg", price: 2599, stock_qty: 99, is_active: true },
     ],
   },
   {
@@ -47,7 +51,8 @@ const staticProducts: ProductCard[] = [
     description: "100% natural, thick, seedless forest Jamun pulp harvested from seasonal wild trees of Chhattisgarh for sugar balance, digestion, and vitality.",
     image: "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png",
     inquiryOnly: false,
-    tags: ["100% Forest Harvest", "Seasonal Superfood"],
+    tags: ["100% Forest Harvest", "Seasonal Superfood", "Free Shipping"],
+    freeShipping: true,
     variants: [
       { id: "e1111111-1111-1111-1111-111111111111", size_label: "1 kg", price: 499, stock_qty: 100, is_active: true },
     ],
@@ -60,6 +65,7 @@ const staticProducts: ProductCard[] = [
     image: "/assets/product/bulk%20Honey/bulk-honey-order.jpg",
     inquiryOnly: true,
     tags: ["B2B Wholesale", "Commercial Drums"],
+    freeShipping: false,
     variants: [],
   },
 ];
@@ -112,6 +118,13 @@ export default function CataloguePage() {
                   href={item.inquiryOnly ? `/contact-us?inquiry=${item.id}` : `/catalogue/${item.slug}`}
                   className="relative block aspect-square rounded-[1.8rem] overflow-hidden bg-brand-cream-light border border-brand-cream-dark/30 group cursor-pointer"
                 >
+                  {item.freeShipping && (
+                    <div className="absolute top-3.5 right-3.5 z-10">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-sans font-bold uppercase tracking-wider shadow-sm bg-emerald-700 text-white">
+                        <Truck className="w-3 h-3 text-emerald-200" /> Free Shipping
+                      </span>
+                    </div>
+                  )}
                   <Image 
                     src={item.image} 
                     alt={item.name} 
@@ -125,7 +138,15 @@ export default function CataloguePage() {
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-2">
                     {item.tags?.map((tag) => (
-                      <span key={tag} className="text-[8px] font-bold uppercase tracking-wider bg-brand-honey/10 text-brand-honey px-2.5 py-1 rounded-full">
+                      <span
+                        key={tag}
+                        className={`text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1 ${
+                          tag === "Free Shipping"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200 font-black"
+                            : "bg-brand-honey/10 text-brand-honey"
+                        }`}
+                      >
+                        {tag === "Free Shipping" && <Truck className="w-2.5 h-2.5" />}
                         {tag}
                       </span>
                     ))}
@@ -187,7 +208,14 @@ export default function CataloguePage() {
                         return (
                           <div key={variant.id} className="flex items-center justify-between gap-3 rounded-2xl border border-brand-cream-dark/25 bg-brand-cream-light/35 px-4 py-2.5">
                             <div>
-                              <p className="font-semibold text-xs text-brand-espresso">{variant.size_label}</p>
+                              <div className="flex items-center gap-1.5">
+                                <p className="font-semibold text-xs text-brand-espresso">{variant.size_label}</p>
+                                {item.freeShipping && (
+                                  <span className="text-[8px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                    <Truck className="w-2.5 h-2.5" /> Free Shipping
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-[10px] text-brand-espresso/60">Rs. {Number(variant.price).toFixed(2)}</p>
                             </div>
                             <div className="flex items-center gap-1.5">

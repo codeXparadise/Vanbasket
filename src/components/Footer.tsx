@@ -83,8 +83,9 @@ export const Footer = () => {
                 Products
               </h4>
               <ul className="space-y-2.5 text-xs font-light text-brand-cream-dark/70">
-                <li><Link href="/#shop" className="hover:text-brand-cream-light transition-colors">250g Daily Jar (₹349)</Link></li>
-                <li><Link href="/#shop" className="hover:text-brand-cream-light transition-colors">500g Family Jar (₹599)</Link></li>
+                <li><Link href="/#shop" className="hover:text-brand-cream-light transition-colors">250g Daily Jar (₹229)</Link></li>
+                <li><Link href="/#shop" className="hover:text-brand-cream-light transition-colors">500g Family Jar (₹429)</Link></li>
+                <li><Link href="/catalogue/raw-wildflower-honey?variant=c5555555-5555-5555-5555-555555555555" className="hover:text-brand-cream-light transition-colors">5kg Pantry Pack (₹2,599)</Link></li>
                 <li><Link href="/contact-us?inquiry=bulk" className="hover:text-brand-cream-light transition-colors">Bulk Wholesale</Link></li>
                 <li className="text-[10px] text-brand-cream-dark/40 italic">Also deals in: Jamun Pulp</li>
               </ul>

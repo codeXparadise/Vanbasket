@@ -5,7 +5,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vanbasket.com";
 export const metadata: Metadata = {
   title: "Pure Wild Forest Honey & Product Catalog | VanBasket",
   description:
-    "Explore 100% pure raw Apis dorsata wild forest honey harvested ethically from Chhattisgarh hives. Available in 250g, 500g, and bulk wholesale quantities.",
+    "Explore 100% pure raw Apis dorsata wild forest honey harvested ethically from Chhattisgarh hives. Available in 250g, 500g, 1kg, 5kg and bulk wholesale quantities.",
   alternates: {
     canonical: `${siteUrl}/catalogue`,
   },
@@ -36,7 +36,7 @@ export default function CatalogueLayout({ children }: { children: React.ReactNod
       "@type": "Offer",
       url: `${siteUrl}/catalogue`,
       priceCurrency: "INR",
-      price: "349.00",
+      price: "229.00",
       priceValidUntil: "2027-12-31",
       itemCondition: "https://schema.org/NewCondition",
       availability: "https://schema.org/InStock",

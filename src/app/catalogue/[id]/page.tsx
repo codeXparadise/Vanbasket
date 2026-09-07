@@ -72,6 +72,17 @@ const jamunFallback = {
   image: "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png",
 };
 
+const defaultHoneyVariants: VariantRow[] = [
+  { id: "a1111111-1111-1111-1111-111111111111", size_label: "250g", price: 229, stock_qty: 100, is_active: true },
+  { id: "b2222222-2222-2222-2222-222222222222", size_label: "500g", price: 429, stock_qty: 100, is_active: true },
+  { id: "c3333333-3333-3333-3333-333333333333", size_label: "1kg", price: 1099, stock_qty: 100, is_active: true },
+  { id: "c5555555-5555-5555-5555-555555555555", size_label: "5kg", price: 2599, stock_qty: 100, is_active: true },
+];
+
+const defaultJamunVariants: VariantRow[] = [
+  { id: "e1111111-1111-1111-1111-111111111111", size_label: "1 kg", price: 499, stock_qty: 100, is_active: true },
+];
+
 const honeyGallery = [
   "/assets/product/250g%20Honey/product-1.png",
   "/assets/product/250g%20Honey/product-2.jpg",
@@ -96,8 +107,14 @@ export default function ProductPage() {
 
   const isJamunInitial = (params?.id || "").toLowerCase().includes("jamun");
   const [product, setProduct] = useState(isJamunInitial ? jamunFallback : fallback);
-  const [variants, setVariants] = useState<VariantRow[]>([]);
-  const [selectedVariantId, setSelectedVariantId] = useState(params?.id || "");
+  const [variants, setVariants] = useState<VariantRow[]>(isJamunInitial ? defaultJamunVariants : defaultHoneyVariants);
+  const [selectedVariantId, setSelectedVariantId] = useState(
+    params?.id && params.id !== "raw-wildflower-honey" && params.id !== "jamun-pulp"
+      ? params.id
+      : isJamunInitial
+      ? "e1111111-1111-1111-1111-111111111111"
+      : "b2222222-2222-2222-2222-222222222222"
+  );
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
@@ -137,8 +154,27 @@ export default function ProductPage() {
 
       if (!productData) return;
 
-      const activeVariants = (productData.product_variants || [])
-        .filter((variant) => variant.is_active)
+      const isJamunProduct = productData.slug === "jamun-pulp" || productData.name.toLowerCase().includes("jamun");
+
+      const rawVariants = (productData.product_variants || []).filter((variant) => variant.is_active);
+      const mappedVariants = rawVariants.map((v) => {
+        if (v.id === "a1111111-1111-1111-1111-111111111111") return { ...v, price: 229 };
+        if (v.id === "b2222222-2222-2222-2222-222222222222") return { ...v, price: 429 };
+        return v;
+      });
+
+      // Ensure 5kg Honey variant is available even before Supabase SQL migration is executed
+      if (!isJamunProduct && !mappedVariants.some((v) => v.id === "c5555555-5555-5555-5555-555555555555" || v.size_label === "5kg")) {
+        mappedVariants.push({
+          id: "c5555555-5555-5555-5555-555555555555",
+          size_label: "5kg",
+          price: 2599,
+          stock_qty: 100,
+          is_active: true,
+        });
+      }
+
+      const activeVariants = (mappedVariants.length > 0 ? mappedVariants : isJamunProduct ? defaultJamunVariants : defaultHoneyVariants)
         .sort((a, b) => Number(a.price) - Number(b.price));
 
       setProduct({
@@ -334,6 +370,9 @@ export default function ProductPage() {
                   <Sparkles className="w-3.5 h-3.5" /> Pure Forest Harvest
                 </span>
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-700 text-white text-[11px] font-bold tracking-wider shadow-sm">
+                  <Truck className="w-3.5 h-3.5 text-emerald-200" /> Free Shipping
+                </span>
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-900/90 text-white text-[10px] font-bold tracking-wider shadow-sm">
                   <CheckCircle2 className="w-3.5 h-3.5" /> VanBasket Assured
                 </span>
               </div>
@@ -448,8 +487,9 @@ export default function ProductPage() {
                   {discountPercent}% OFF
                 </span>
               </div>
-              <div className="text-xs text-brand-espresso/70 font-medium">
-                Inclusive of all taxes · Free Delivery on this item
+              <div className="text-xs text-emerald-800 bg-emerald-50/80 border border-emerald-200/80 px-3.5 py-2 rounded-xl flex items-center gap-2 font-medium">
+                <Truck className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>Inclusive of all taxes · <strong>Free Pan-India Shipping</strong> on this item</span>
               </div>
             </div>
 
@@ -505,7 +545,12 @@ export default function ProductPage() {
                           : "border-brand-cream-dark/60 bg-brand-cream-light/50 hover:border-brand-espresso/60"
                       }`}
                     >
-                      <div className="text-xs font-bold text-brand-espresso">{v.size_label}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs font-bold text-brand-espresso">{v.size_label}</div>
+                        <span className="text-[8px] font-bold text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200">
+                          Free Shipping
+                        </span>
+                      </div>
                       <div className="font-sans font-black text-sm text-brand-honey mt-1">
                         ₹{Number(v.price).toFixed(0)}
                       </div>

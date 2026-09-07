@@ -88,7 +88,7 @@ export default async function ProductDetailLayout(props: LayoutProps) {
     ? `${siteUrl}/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png`
     : `${siteUrl}/assets/product-1.jpg`;
 
-  const price = isBulk ? "10000.00" : isJamun ? "500.00" : "349.00";
+  const price = isBulk ? "10000.00" : isJamun ? "499.00" : "229.00";
 
   const productJsonLd = {
     "@context": "https://schema.org",

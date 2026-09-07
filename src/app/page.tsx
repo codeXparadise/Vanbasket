@@ -23,6 +23,7 @@ import {
   ShoppingBag,
   CreditCard,
   Lock,
+  Truck,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
@@ -51,6 +52,7 @@ interface HomepageProduct {
   img: string;
   isPurchasable: boolean;
   b2bInquiry?: string;
+  freeShipping?: boolean;
 }
 
 const homepageProducts: HomepageProduct[] = [
@@ -59,14 +61,15 @@ const homepageProducts: HomepageProduct[] = [
     slug: "raw-wildflower-honey",
     title: "Wild Forest Honey",
     size: "500g Signature Jar",
-    price: 599,
-    priceDisplay: "₹599",
-    originalPriceDisplay: "₹749",
+    price: 429,
+    priceDisplay: "₹429",
+    originalPriceDisplay: "₹599",
     badge: "Signature Harvest",
     badgeColor: "bg-brand-honey text-brand-espresso font-bold",
-    highlight: "Raw Apis dorsata · Unfiltered multi-floral wild honey in amber glass (also in 250g & 1kg)",
+    highlight: "Raw Apis dorsata · Unfiltered multi-floral wild honey in amber glass (also in 250g, 1kg & 5kg)",
     img: "/assets/product/500g%20Honey/product-1.jpg",
     isPurchasable: true,
+    freeShipping: true,
   },
   {
     id: "e1111111-1111-1111-1111-111111111111",
@@ -81,6 +84,7 @@ const homepageProducts: HomepageProduct[] = [
     highlight: "100% natural, thick, seedless forest Jamun pulp for sugar balance & vitality",
     img: "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png",
     isPurchasable: true,
+    freeShipping: true,
   },
   {
     id: "f1111111-1111-1111-1111-111111111111",
@@ -95,6 +99,7 @@ const homepageProducts: HomepageProduct[] = [
     highlight: "Artisanal raw honey with wooden dipper in gold-accent festive luxury gift box",
     img: "/assets/instagram%20Post/post_1.jpg",
     isPurchasable: true,
+    freeShipping: true,
   },
   {
     id: "bulk-orders-b2b",
@@ -109,6 +114,7 @@ const homepageProducts: HomepageProduct[] = [
     img: "/assets/product/bulk%20Honey/bulk-honey-order.jpg",
     isPurchasable: false,
     b2bInquiry: "bulk-honey",
+    freeShipping: false,
   },
 ];
 
@@ -314,6 +320,15 @@ export default function Home() {
                     </div>
                   )}
 
+                  {/* Free Shipping Badge */}
+                  {prod.freeShipping && (
+                    <div className="absolute top-4 right-4 z-20">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-sans font-black uppercase tracking-wider shadow-sm bg-emerald-700 text-white">
+                        <Truck className="w-3 h-3 text-emerald-200" /> Free Shipping
+                      </span>
+                    </div>
+                  )}
+
                   {/* Product Image Showcase */}
                   <div className="relative aspect-square w-full bg-gradient-to-b from-brand-cream-warm/40 to-brand-cream-warm/15 p-5 flex items-center justify-center overflow-hidden">
                     <Image
@@ -346,6 +361,11 @@ export default function Home() {
                           {prod.originalPriceDisplay && (
                             <div className="text-[10px] text-brand-espresso-muted line-through">
                               {prod.originalPriceDisplay}
+                            </div>
+                          )}
+                          {prod.freeShipping && (
+                            <div className="text-[9px] font-bold text-emerald-700 flex items-center justify-end gap-1 mt-0.5">
+                              <Truck className="w-2.5 h-2.5" /> Free Delivery
                             </div>
                           )}
                         </div>

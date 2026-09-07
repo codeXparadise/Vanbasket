@@ -275,6 +275,8 @@ export default function CheckoutPage() {
                   itemImage = "/assets/product/250g%20Honey/product-2.jpg";
                 } else if (vData.size_label === "1kg") {
                   itemImage = "/assets/product/250g%20Honey/product-3.jpg";
+                } else if (vData.size_label.toLowerCase().includes("5kg") || vData.size_label.toLowerCase().includes("5 kg")) {
+                  itemImage = "/assets/product/500g%20Honey/product-1.jpg";
                 }
 
                 addToCartBatch(

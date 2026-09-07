@@ -87,6 +87,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please choose a valid shipping address." }, { status: 400 });
     }
 
+    // Auto-sync 5kg variant and updated prices if DB has not been migrated yet
+    if (variantIds.includes("c5555555-5555-5555-5555-555555555555")) {
+      await adminSupabase.from("product_variants").upsert({
+        id: "c5555555-5555-5555-5555-555555555555",
+        product_id: "d4444444-4444-4444-8444-444444444444",
+        size_label: "5kg",
+        price: 2599.00,
+        stock_qty: 100,
+        sku: "VAN-HONEY-5KG",
+        is_active: true,
+      }, { onConflict: "id" });
+    }
+    if (variantIds.includes("a1111111-1111-1111-1111-111111111111")) {
+      await adminSupabase.from("product_variants").update({ price: 229.00 }).eq("id", "a1111111-1111-1111-1111-111111111111");
+    }
+    if (variantIds.includes("b2222222-2222-2222-2222-222222222222")) {
+      await adminSupabase.from("product_variants").update({ price: 429.00 }).eq("id", "b2222222-2222-2222-2222-222222222222");
+    }
+
     const { data: dbVariants, error: variantError } = await adminSupabase
       .from("product_variants")
       .select("id, price, stock_qty, size_label, is_active, products (name, is_active)")
