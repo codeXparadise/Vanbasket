@@ -1,13 +1,27 @@
 import Razorpay from "razorpay";
 
-const keyId = process.env.RAZORPAY_KEY_ID;
-const keySecret = process.env.RAZORPAY_KEY_SECRET;
+// Lazy initialization of Razorpay SDK to prevent Next.js static build failures
+// when runtime environment variables are missing during the build phase.
+let razorpayInstance: Razorpay | null = null;
 
-if (!keyId || !keySecret) {
-  console.warn("Razorpay environment variables are not defined. Check your .env.local file.");
-}
+export const razorpay = new Proxy({} as Razorpay, {
+  get: (target, prop) => {
+    if (!razorpayInstance) {
+      const keyId = process.env.RAZORPAY_KEY_ID;
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-export const razorpay = new Razorpay({
-  key_id: keyId || "rzp_test_T6F3LtF1tbHeC4",
-  key_secret: keySecret || "l9qpaUbLSGef0cxkzQocQYqv",
+      if (!keyId || !keySecret) {
+        throw new Error("Critical Error: Razorpay credentials (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET) are missing.");
+      }
+
+      razorpayInstance = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret,
+      });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = (razorpayInstance as any)[prop];
+    return typeof value === 'function' ? value.bind(razorpayInstance) : value;
+  }
 });
