@@ -518,9 +518,16 @@ export default function CheckoutPage() {
         .eq("id", user.id)
         .maybeSingle();
 
+      const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      if (!razorpayKeyId) {
+        setError("Payment configuration is missing.");
+        setIsLoadingAction(false);
+        return;
+      }
+
       // 4. Open Razorpay checkout popup
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_T6F3LtF1tbHeC4",
+        key: razorpayKeyId,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "Van Basket",
