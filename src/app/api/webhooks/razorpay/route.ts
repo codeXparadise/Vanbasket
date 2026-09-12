@@ -16,7 +16,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing signature header." }, { status: 400 });
     }
 
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "razorpay_webhook_secret_123";
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error("CRITICAL: RAZORPAY_WEBHOOK_SECRET is not set.");
+      return NextResponse.json({ error: "Server configuration error." }, { status: 500 });
+    }
 
     // 1. Verify webhook signature
     const expectedSignature = crypto
