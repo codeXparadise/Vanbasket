@@ -1,13 +1,28 @@
 import Razorpay from "razorpay";
 
-const keyId = process.env.RAZORPAY_KEY_ID;
-const keySecret = process.env.RAZORPAY_KEY_SECRET;
+let razorpayInstance: Razorpay | null = null;
 
-if (!keyId || !keySecret) {
-  console.warn("Razorpay environment variables are not defined. Check your .env.local file.");
+function getRazorpayInstance(): Razorpay {
+  if (razorpayInstance) return razorpayInstance;
+
+  const key_id = process.env.RAZORPAY_KEY_ID;
+  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!key_id || !key_secret) {
+    throw new Error("CRITICAL: Razorpay secrets (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET) are missing from the environment.");
+  }
+
+  razorpayInstance = new Razorpay({
+    key_id,
+    key_secret,
+  });
+
+  return razorpayInstance;
 }
 
-export const razorpay = new Razorpay({
-  key_id: keyId || "rzp_test_T6F3LtF1tbHeC4",
-  key_secret: keySecret || "l9qpaUbLSGef0cxkzQocQYqv",
+export const razorpay = new Proxy({} as Razorpay, {
+  get(target, prop) {
+    const instance = getRazorpayInstance();
+    return Reflect.get(instance, prop);
+  }
 });
