@@ -19,7 +19,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing verification parameters." }, { status: 400 });
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || "l9qpaUbLSGef0cxkzQocQYqv";
+    // [SECURITY] Aegis: Removed hardcoded fallback secrets. Relying strictly on process.env and failing securely to prevent exposure.
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret) {
+      console.error("Missing RAZORPAY_KEY_SECRET environment variable.");
+      return NextResponse.json({ error: "Server configuration error." }, { status: 500 });
+    }
 
     // 1. Verify Razorpay signature using HMAC SHA256
     const expectedSignature = crypto

@@ -519,8 +519,16 @@ export default function CheckoutPage() {
         .maybeSingle();
 
       // 4. Open Razorpay checkout popup
+      // [SECURITY] Aegis: Removed hardcoded fallback secrets. Relying strictly on process.env and failing securely to prevent exposure.
+      const rzpKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      if (!rzpKeyId) {
+        setError("Payment gateway is temporarily unavailable. Please try again later.");
+        setIsLoadingAction(false);
+        return;
+      }
+
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_T6F3LtF1tbHeC4",
+        key: rzpKeyId,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "Van Basket",
