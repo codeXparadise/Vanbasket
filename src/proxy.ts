@@ -3,15 +3,14 @@ import { createServerClient } from "@supabase/ssr";
 
 const PROTECTED_ROUTES = ["/profile", "/checkout", "/complete-profile"];
 
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://iyzhmgyfxqpwchfdhvei.supabase.co";
-
-const SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5emhtZ3lmeHFwd2NoZmRodmVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3MTU0NzAsImV4cCI6MjEwMDI5MTQ3MH0.FpCgjLlKbWsahvlxrFSmKyP3-4ajIvv5ffUKFK--12c";
-
 export async function proxy(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY in middleware");
+  }
+
   let response = NextResponse.next({
     request,
   });
@@ -28,7 +27,7 @@ export async function proxy(request: NextRequest) {
     return redirectResponse;
   };
 
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
