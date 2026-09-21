@@ -43,14 +43,10 @@ export const Footer = () => {
                 <MapPin className="h-3.5 w-3.5 text-brand-honey flex-shrink-0 mt-0.5" />
                 <span>HN 15, Ridhi Sidhi colony, Hirapur chock, siwani Balod, CG, pin 491226</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 border-t border-white/10 pt-2.5 mt-2">
+              <div className="border-t border-white/10 pt-2.5 mt-2">
                 <div>
                   <p className="text-[9px] uppercase tracking-wider text-brand-cream-dark/40">FSSAI License</p>
                   <p className="font-semibold text-brand-cream-light">20525029000369</p>
-                </div>
-                <div>
-                  <p className="text-[9px] uppercase tracking-wider text-brand-cream-dark/40">GSTIN ID</p>
-                  <p className="font-semibold text-brand-cream-light">22ABCFG2092F1ZU</p>
                 </div>
               </div>
             </div>
@@ -83,9 +79,9 @@ export const Footer = () => {
                 Products
               </h4>
               <ul className="space-y-2.5 text-xs font-light text-brand-cream-dark/70">
-                <li><Link href="/#shop" className="hover:text-brand-cream-light transition-colors">250g Daily Jar (₹229)</Link></li>
-                <li><Link href="/#shop" className="hover:text-brand-cream-light transition-colors">500g Family Jar (₹429)</Link></li>
-                <li><Link href="/catalogue/raw-wildflower-honey?variant=c5555555-5555-5555-5555-555555555555" className="hover:text-brand-cream-light transition-colors">5kg Pantry Pack (₹2,599)</Link></li>
+                <li><Link href="/#shop" className="hover:text-brand-cream-light transition-colors">250g Daily Jar (₹280)</Link></li>
+                <li><Link href="/#shop" className="hover:text-brand-cream-light transition-colors">500g Family Jar (₹480)</Link></li>
+                <li><Link href="/catalogue/raw-wildflower-honey?variant=van-honey-5kg" className="hover:text-brand-cream-light transition-colors">5kg Pantry Pack (₹2,599)</Link></li>
                 <li><Link href="/contact-us?inquiry=bulk" className="hover:text-brand-cream-light transition-colors">Bulk Wholesale</Link></li>
                 <li className="text-[10px] text-brand-cream-dark/40 italic">Also deals in: Jamun Pulp</li>
               </ul>

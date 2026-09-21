@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { ArrowRight, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 
 const heroImages = [
@@ -133,9 +132,8 @@ export const Hero = () => {
           fill
           priority={idx === 0}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
-          className={`object-cover object-center transition-opacity duration-[1200ms] ease-in-out pointer-events-none ${
-            idx === currentImage ? "opacity-100 scale-100" : "opacity-0 scale-105"
-          }`}
+          className={`object-cover object-center transition-opacity duration-[1200ms] ease-in-out pointer-events-none ${idx === currentImage ? "opacity-100 scale-100" : "opacity-0 scale-105"
+            }`}
           style={{ transitionProperty: "opacity, transform" }}
         />
       ))}
@@ -167,13 +165,6 @@ export const Hero = () => {
                 <span>Shop Now</span>
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </a>
-
-              <Link
-                href="/about-us"
-                className="inline-flex h-12 sm:h-14 items-center justify-center rounded-full border border-brand-espresso/20 bg-white/70 hover:bg-white px-7 text-xs font-bold uppercase tracking-[0.18em] text-brand-espresso transition-all duration-300 shadow-sm backdrop-blur"
-              >
-                Our Story
-              </Link>
             </div>
           </div>
         </div>
@@ -216,11 +207,10 @@ export const Hero = () => {
                 setCurrentImage(idx);
               }}
               aria-label={`Go to slide ${idx + 1}`}
-              className={`transition-all duration-300 rounded-full ${
-                idx === currentImage
+              className={`transition-all duration-300 rounded-full ${idx === currentImage
                   ? "w-8 h-2 bg-brand-honey shadow-sm"
                   : "w-2 h-2 bg-brand-espresso/30 hover:bg-brand-espresso/60"
-              }`}
+                }`}
             />
           ))}
         </div>

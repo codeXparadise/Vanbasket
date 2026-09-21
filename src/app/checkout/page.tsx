@@ -24,6 +24,7 @@ import {
   Home
 } from "lucide-react";
 import { LottiePlayer } from "@/components/LottiePlayer";
+import { resolveVariant } from "@/utils/productCatalog";
 
 
 interface Address {
@@ -251,46 +252,64 @@ export default function CheckoutPage() {
             const hasVariant = cartItems.some((item) => item.id === variantParam);
             if (!hasVariant) {
               setIsResolvingVariant(true);
-              const { data: vData } = await supabase
-                .from("product_variants")
-                .select("id, size_label, price, product_id, products(name, slug)")
-                .eq("id", variantParam)
-                .maybeSingle();
-
-              if (vData) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const prodName = (vData.products as any)?.name || "Wild Forest Honey";
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const prodSlug = (vData.products as any)?.slug || "";
-                let itemImage = "/assets/product/250g%20Honey/product-1.png";
-                if (prodSlug === "jamun-pulp" || vData.size_label.toLowerCase().includes("jamun")) {
-                  itemImage = "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png";
-                } else if (
-                  prodSlug === "gift-hampers" ||
-                  vData.size_label.toLowerCase().includes("hamper") ||
-                  vData.size_label.toLowerCase().includes("assorted")
-                ) {
-                  itemImage = "/assets/instagram%20Post/post_1.jpg";
-                } else if (vData.size_label === "250g") {
-                  itemImage = "/assets/product/250g%20Honey/product-2.jpg";
-                } else if (vData.size_label === "1kg") {
-                  itemImage = "/assets/product/250g%20Honey/product-3.jpg";
-                } else if (vData.size_label.toLowerCase().includes("5kg") || vData.size_label.toLowerCase().includes("5 kg")) {
-                  itemImage = "/assets/product/500g%20Honey/product-1.jpg";
-                }
-
+              const resolved = resolveVariant(variantParam);
+              if (resolved) {
                 addToCartBatch(
                   {
-                    id: vData.id,
-                    name: prodName,
-                    variant: vData.size_label,
-                    price: Number(vData.price),
-                    image: itemImage,
+                    id: resolved.id,
+                    name: resolved.productName,
+                    variant: resolved.sizeLabel,
+                    price: resolved.price,
+                    image: resolved.image,
                   },
                   1
                 );
+                setIsResolvingVariant(false);
+              } else {
+                const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                if (UUID_REGEX.test(variantParam)) {
+                  const { data: vData } = await supabase
+                    .from("product_variants")
+                    .select("id, size_label, price, product_id, products(name, slug)")
+                    .eq("id", variantParam)
+                    .maybeSingle();
+
+                  if (vData) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const prodName = (vData.products as any)?.name || "Wild Forest Honey";
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const prodSlug = (vData.products as any)?.slug || "";
+                    let itemImage = "/assets/product/250g%20Honey/product-1.png";
+                    if (prodSlug === "jamun-pulp" || vData.size_label.toLowerCase().includes("jamun")) {
+                      itemImage = "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png";
+                    } else if (
+                      prodSlug === "gift-hampers" ||
+                      vData.size_label.toLowerCase().includes("hamper") ||
+                      vData.size_label.toLowerCase().includes("assorted")
+                    ) {
+                      itemImage = "/assets/instagram%20Post/post_1.jpg";
+                    } else if (vData.size_label === "250g") {
+                      itemImage = "/assets/product/250g%20Honey/product-2.jpg";
+                    } else if (vData.size_label === "1kg") {
+                      itemImage = "/assets/product/250g%20Honey/product-3.jpg";
+                    } else if (vData.size_label.toLowerCase().includes("5kg") || vData.size_label.toLowerCase().includes("5 kg")) {
+                      itemImage = "/assets/product/500g%20Honey/product-1.jpg";
+                    }
+
+                    addToCartBatch(
+                      {
+                        id: vData.id,
+                        name: prodName,
+                        variant: vData.size_label,
+                        price: Number(vData.price),
+                        image: itemImage,
+                      },
+                      1
+                    );
+                  }
+                }
+                setIsResolvingVariant(false);
               }
-              setIsResolvingVariant(false);
             }
           }
         }

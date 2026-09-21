@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { razorpay } from "@/utils/razorpay";
+import { resolveVariant } from "@/utils/productCatalog";
 
 interface CartInputItem {
   id: string;
@@ -27,7 +28,7 @@ function isValidCartItem(item: unknown): item is CartInputItem {
   const candidate = item as CartInputItem;
   return (
     typeof candidate.id === "string" &&
-    UUID_PATTERN.test(candidate.id) &&
+    (UUID_PATTERN.test(candidate.id) || candidate.id.startsWith("van-")) &&
     Number.isInteger(candidate.quantity) &&
     candidate.quantity > 0 &&
     candidate.quantity <= 99
@@ -79,7 +80,15 @@ export async function POST(request: Request) {
     if (typedCartItems.some((item) => item.quantity > 99)) {
       return NextResponse.json({ error: "Cart contains invalid item quantities." }, { status: 400 });
     }
-    const variantIds = typedCartItems.map((item) => item.id);
+
+    // Map each item ID (which may be semantic like "van-honey-500g" or UUID) to a DB UUID
+    const itemDbMap = new Map<string, string>();
+    for (const item of typedCartItems) {
+      const resolved = resolveVariant(item.id);
+      const dbId = resolved?.dbUuid || item.id;
+      itemDbMap.set(item.id, dbId);
+    }
+    const dbVariantIds = Array.from(new Set(itemDbMap.values()));
 
     // Validate shipping address belongs to user
     const { data: address, error: addressError } = await adminSupabase
@@ -94,7 +103,7 @@ export async function POST(request: Request) {
     }
 
     // Auto-sync 5kg variant and updated prices if DB has not been migrated yet
-    if (variantIds.includes("c5555555-5555-5555-5555-555555555555")) {
+    if (dbVariantIds.includes("c5555555-5555-5555-5555-555555555555")) {
       await adminSupabase.from("product_variants").upsert({
         id: "c5555555-5555-5555-5555-555555555555",
         product_id: "d4444444-4444-4444-8444-444444444444",
@@ -105,20 +114,20 @@ export async function POST(request: Request) {
         is_active: true,
       }, { onConflict: "id" });
     }
-    if (variantIds.includes("a1111111-1111-1111-1111-111111111111")) {
-      await adminSupabase.from("product_variants").update({ price: 229.00 }).eq("id", "a1111111-1111-1111-1111-111111111111");
+    if (dbVariantIds.includes("a1111111-1111-1111-1111-111111111111")) {
+      await adminSupabase.from("product_variants").update({ price: 280.00 }).eq("id", "a1111111-1111-1111-1111-111111111111");
     }
-    if (variantIds.includes("b2222222-2222-2222-2222-222222222222")) {
-      await adminSupabase.from("product_variants").update({ price: 429.00 }).eq("id", "b2222222-2222-2222-2222-222222222222");
+    if (dbVariantIds.includes("b2222222-2222-2222-2222-222222222222")) {
+      await adminSupabase.from("product_variants").update({ price: 480.00 }).eq("id", "b2222222-2222-2222-2222-222222222222");
     }
 
     // Fetch database pricing and stock information
     const { data: dbVariants, error: variantError } = await adminSupabase
       .from("product_variants")
       .select("id, price, stock_qty, size_label, is_active, products (name, is_active)")
-      .in("id", variantIds);
+      .in("id", dbVariantIds);
 
-    if (variantError || !dbVariants || dbVariants.length !== variantIds.length) {
+    if (variantError || !dbVariants || dbVariants.length !== dbVariantIds.length) {
       return NextResponse.json(
         { error: "Failed to validate product variants. Some products might no longer exist." },
         { status: 400 }
@@ -140,7 +149,9 @@ export async function POST(request: Request) {
     }[] = [];
 
     for (const item of typedCartItems) {
-      const dbVariant = dbVariantsTyped.find((v) => v.id === item.id);
+      const targetDbId = itemDbMap.get(item.id) || item.id;
+      const dbVariant = dbVariantsTyped.find((v) => v.id === targetDbId || v.id === item.id);
+      const resolved = resolveVariant(item.id);
       
       if (!dbVariant) {
         return NextResponse.json({ error: `Product variant with ID ${item.id} not found.` }, { status: 400 });
@@ -157,18 +168,18 @@ export async function POST(request: Request) {
         );
       }
 
-      const itemPrice = Number(dbVariant.price);
+      const itemPrice = resolved ? resolved.price : Number(dbVariant.price);
       const lineTotal = itemPrice * item.quantity;
       subtotal += lineTotal;
 
-      const productName = dbVariant.products && !Array.isArray(dbVariant.products)
+      const productName = resolved?.productName || (dbVariant.products && !Array.isArray(dbVariant.products)
         ? (dbVariant.products as { name: string }).name
-        : "Raw Wildflower Honey";
+        : "Raw Wildflower Honey");
 
       itemsToInsert.push({
         variant_id: dbVariant.id,
         product_name_snapshot: productName,
-        variant_label_snapshot: dbVariant.size_label,
+        variant_label_snapshot: resolved ? `${resolved.sizeLabel} (${resolved.id})` : dbVariant.size_label,
         unit_price: itemPrice,
         quantity: item.quantity,
         line_total: lineTotal,

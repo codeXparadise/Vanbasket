@@ -109,7 +109,7 @@ export const Navbar = () => {
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "About Us", href: "/about-us" },
+    { name: "About Brand", href: "/about-us" },
     { name: "Contact Us", href: "/contact-us" },
     { name: "Catalogue", href: "/catalogue" },
   ];
@@ -120,7 +120,7 @@ export const Navbar = () => {
         className="sticky top-0 left-0 w-full z-40 bg-brand-cream-light/90 backdrop-blur-xl border-b border-brand-espresso/10 py-4.5 shadow-[0_8px_30px_rgba(36,27,21,0.06)] transition-all"
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
-          
+
           {/* Mobile Menu Toggle (Left) */}
           <button
             onClick={() => setIsMobileMenuOpen(true)}
@@ -209,9 +209,8 @@ export const Navbar = () => {
 
       {/* Mobile Navigation Drawer */}
       <div
-        className={`fixed inset-0 z-50 transition-opacity duration-500 ${
-          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-50 transition-opacity duration-500 ${isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
       >
         {/* Backdrop overlay */}
         <div
@@ -221,9 +220,8 @@ export const Navbar = () => {
 
         {/* Drawer Content */}
         <div
-          className={`absolute top-0 left-0 w-[85%] max-w-xs h-full bg-brand-cream-light p-6 shadow-2xl flex flex-col justify-between transition-transform duration-500 ease-organic ${
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+          className={`absolute top-0 left-0 w-[85%] max-w-xs h-full bg-brand-cream-light p-6 shadow-2xl flex flex-col justify-between transition-transform duration-500 ease-organic ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
         >
           <div>
             <div className="flex items-center justify-between mb-8 sm:mb-10">

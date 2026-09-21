@@ -3,246 +3,434 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
-import { Check, Mail, Plus, MessageSquare, Phone, Truck } from "lucide-react";
+import { useToast } from "@/components/Toast";
+import {
+  Lock,
+  ArrowRight,
+  ShoppingBag,
+  ShieldCheck,
+  Truck,
+  Mail,
+  MessageSquare,
+} from "lucide-react";
 
-interface VariantCard {
+interface VariantInfo {
   id: string;
   size_label: string;
   price: number;
+  originalPrice?: number;
+  image?: string;
   stock_qty: number;
   is_active: boolean;
 }
 
-interface ProductCard {
+interface CatalogueProduct {
   id: string;
   slug: string;
-  name: string;
-  description: string;
-  image: string;
-  variants: VariantCard[];
-  inquiryOnly?: boolean;
-  tags?: string[];
+  title: string;
+  badge?: string;
+  badgeColor?: string;
+  highlight?: string;
+  img: string;
+  isPurchasable: boolean;
   freeShipping?: boolean;
+  variants: VariantInfo[];
 }
 
-const staticProducts: ProductCard[] = [
+const catalogueProducts: CatalogueProduct[] = [
   {
     id: "raw-wildflower-honey",
     slug: "raw-wildflower-honey",
-    name: "Raw Wildflower Honey",
-    description: "Apis dorsata raw wild honey gathered from wild tree hives in the deep forests of Chhattisgarh. Rich in antioxidants and natural pollen.",
-    image: "/assets/product/250g%20Honey/product-1.png",
-    tags: ["100% Pure Sourced", "Forest Harvested", "Free Shipping"],
+    title: "Wild Forest Honey",
+    badge: "Signature Harvest",
+    badgeColor: "bg-brand-honey text-brand-espresso font-bold",
+    highlight: "Raw Apis dorsata · Unfiltered multi-floral wild honey in amber glass",
+    img: "/assets/product/500g%20Honey/product-1.jpg",
+    isPurchasable: true,
     freeShipping: true,
     variants: [
-      { id: "a1111111-1111-1111-1111-111111111111", size_label: "250g", price: 229, stock_qty: 99, is_active: true },
-      { id: "b2222222-2222-2222-2222-222222222222", size_label: "500g", price: 429, stock_qty: 99, is_active: true },
-      { id: "c3333333-3333-3333-3333-333333333333", size_label: "1kg", price: 1099, stock_qty: 99, is_active: true },
-      { id: "c5555555-5555-5555-5555-555555555555", size_label: "5kg", price: 2599, stock_qty: 99, is_active: true },
+      {
+        id: "van-honey-250g",
+        size_label: "250g",
+        price: 280,
+        originalPrice: 350,
+        image: "/assets/product/250g%20Honey/product-1.png",
+        stock_qty: 99,
+        is_active: true,
+      },
+      {
+        id: "van-honey-500g",
+        size_label: "500g",
+        price: 480,
+        originalPrice: 599,
+        image: "/assets/product/500g%20Honey/product-1.jpg",
+        stock_qty: 99,
+        is_active: true,
+      },
+      {
+        id: "van-honey-1kg",
+        size_label: "1kg",
+        price: 1099,
+        originalPrice: 1299,
+        image: "/assets/product/500g%20Honey/product-2.jpg",
+        stock_qty: 99,
+        is_active: true,
+      },
+      {
+        id: "van-honey-5kg",
+        size_label: "5kg",
+        price: 2599,
+        originalPrice: 2999,
+        image: "/assets/product/500g%20Honey/product-3.jpg",
+        stock_qty: 99,
+        is_active: true,
+      },
     ],
   },
   {
-    id: "jamun-pulp",
+    id: "van-jamun-pulp-1kg",
     slug: "jamun-pulp",
-    name: "Pure Wild Jamun Pulp",
-    description: "100% natural, thick, seedless forest Jamun pulp harvested from seasonal wild trees of Chhattisgarh for sugar balance, digestion, and vitality.",
-    image: "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png",
-    inquiryOnly: false,
-    tags: ["100% Forest Harvest", "Seasonal Superfood", "Free Shipping"],
+    title: "Pure Wild Jamun Pulp",
+    badge: "Seasonal Superfood",
+    badgeColor: "bg-purple-100 text-purple-900 border border-purple-200 font-bold",
+    highlight: "100% natural, thick, seedless forest Jamun pulp for sugar balance & vitality",
+    img: "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png",
+    isPurchasable: true,
     freeShipping: true,
     variants: [
-      { id: "e1111111-1111-1111-1111-111111111111", size_label: "1 kg", price: 499, stock_qty: 100, is_active: true },
+      {
+        id: "van-jamun-pulp-1kg",
+        size_label: "1 kg",
+        price: 499,
+        originalPrice: 649,
+        image: "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png",
+        stock_qty: 100,
+        is_active: true,
+      },
     ],
   },
   {
-    id: "bulk-honey",
+    id: "van-gift-hamper-luxury",
+    slug: "gift-hampers",
+    title: "Van Basket Gift Hamper",
+    badge: "Festive Luxury",
+    badgeColor: "bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold",
+    highlight: "Artisanal raw honey with wooden dipper in gold-accent festive luxury gift box",
+    img: "/assets/instagram%20Post/post_1.jpg",
+    isPurchasable: true,
+    freeShipping: true,
+    variants: [
+      {
+        id: "van-gift-hamper-luxury",
+        size_label: "Luxury Box",
+        price: 799,
+        originalPrice: 999,
+        image: "/assets/instagram%20Post/post_1.jpg",
+        stock_qty: 50,
+        is_active: true,
+      },
+    ],
+  },
+  {
+    id: "van-bulk-honey-b2b",
     slug: "bulk-honey",
-    name: "Bulk Honey & Jamun Pulp",
-    description: "Ethically gathered pure forest honey & Jamun pulp in bulk drums (25kg - 200kg). Ideal for commercial brands, ayurveda, and wholesale export.",
-    image: "/assets/product/bulk%20Honey/bulk-honey-order.jpg",
-    inquiryOnly: true,
-    tags: ["B2B Wholesale", "Commercial Drums"],
+    title: "Bulk Honey & Jamun Pulp",
+    badge: "Commercial Division",
+    badgeColor: "bg-brand-forest text-brand-cream-light font-bold",
+    highlight: "Direct Forest allocations in commercial 25kg - 200kg drums for retail & pharma",
+    img: "/assets/product/bulk%20Honey/bulk-honey-order.jpg",
+    isPurchasable: false,
     freeShipping: false,
     variants: [],
   },
 ];
 
 export default function CataloguePage() {
-  const { addToCartBatch } = useCart();
-  const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
+  const router = useRouter();
+  const { addToCartBatch, setIsCartOpen, isAuthenticated } = useCart();
+  const { showToast } = useToast();
 
-  const handleAddToCart = (product: ProductCard, variant: VariantCard) => {
-    setAddedItems((prev) => ({ ...prev, [variant.id]: true }));
+  // Track active selected variant for each product card
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, VariantInfo>>(() => {
+    const initial: Record<string, VariantInfo> = {};
+    catalogueProducts.forEach((prod) => {
+      if (prod.variants && prod.variants.length > 0) {
+        initial[prod.id] = prod.variants[0];
+      }
+    });
+    return initial;
+  });
+
+  const handleVariantSelect = (prodId: string, variant: VariantInfo, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedVariants((prev) => ({ ...prev, [prodId]: variant }));
+  };
+
+  const handleProductCardClick = (prod: CatalogueProduct) => {
+    if (!prod.isPurchasable) {
+      router.push(`/contact-us?inquiry=${prod.slug}`);
+      return;
+    }
+    const currentVariant = selectedVariants[prod.id];
+    const variantParam = currentVariant ? `?variant=${currentVariant.id}` : "";
+    router.push(`/catalogue/${prod.slug}${variantParam}`);
+  };
+
+  const handleBuyNow = (prod: CatalogueProduct, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!prod.isPurchasable) return;
+
+    const variant = selectedVariants[prod.id] || prod.variants[0];
     addToCartBatch(
       {
         id: variant.id,
-        name: product.name,
+        name: prod.title,
         variant: variant.size_label,
         price: variant.price,
-        image: product.image,
+        image: variant.image || prod.img,
       },
       1
     );
-    setTimeout(() => {
-      setAddedItems((prev) => ({ ...prev, [variant.id]: false }));
-    }, 1500);
+
+    showToast("success", `Proceeding to checkout for ${prod.title} (${variant.size_label})...`);
+
+    if (!isAuthenticated) {
+      router.push(`/login?redirect=${encodeURIComponent(`/checkout?variant=${variant.id}`)}`);
+      return;
+    }
+
+    router.push(`/checkout?variant=${variant.id}`);
+  };
+
+  const handleAddToCartQuick = (prod: CatalogueProduct, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!prod.isPurchasable) return;
+
+    const variant = selectedVariants[prod.id] || prod.variants[0];
+    addToCartBatch(
+      {
+        id: variant.id,
+        name: prod.title,
+        variant: variant.size_label,
+        price: variant.price,
+        image: variant.image || prod.img,
+      },
+      1
+    );
+
+    setIsCartOpen(true);
+    showToast("success", `Added ${prod.title} (${variant.size_label}) to your basket!`);
   };
 
   return (
     <div className="relative min-h-screen bg-brand-cream-light text-brand-espresso flex flex-col justify-between">
       <Navbar />
-      <main className="flex-grow pt-28 pb-24 px-6 md:px-12 max-w-7xl mx-auto w-full">
+
+      <main className="flex-grow pt-28 pb-24 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto w-full">
         {/* Banner Section */}
-        <div className="relative mb-14 min-h-[300px] md:min-h-[380px] overflow-hidden bg-brand-espresso text-brand-cream-light flex items-end p-8 md:p-14 rounded-[2.5rem]">
-          <Image src="/assets/hero/catalogue/vanbasket-catalogue-hero.jpg" alt="Wild forest honey" fill sizes="100vw" className="object-cover opacity-70" />
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-espresso/90 to-transparent" />
-          <div className="relative z-10 space-y-4 max-w-xl">
-            <span className="text-[10px] font-sans font-bold uppercase tracking-[0.3em] text-brand-terracotta">van basket catalogue</span>
-            <h1 className="font-serif text-4xl md:text-6xl font-black tracking-tight leading-none text-brand-cream-light">Pure & Raw.</h1>
-            <p className="font-sans text-xs md:text-sm text-brand-cream-light/75 font-light leading-relaxed max-w-md">
-              Ethically sourced forest products from organic hives. Fully static listing for lightning-fast performance.
+        <div className="relative mb-12 min-h-[260px] md:min-h-[340px] overflow-hidden bg-brand-espresso text-brand-cream-light flex items-end p-6 sm:p-10 md:p-14 rounded-3xl shadow-xl">
+          <Image
+            src="/assets/hero/catalogue/vanbasket-catalogue-hero.jpg"
+            alt="Wild forest honey catalogue"
+            fill
+            sizes="100vw"
+            className="object-cover opacity-60 scale-105 transition-transform duration-[4000ms]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-espresso/95 via-brand-espresso/70 to-transparent" />
+          <div className="relative z-10 space-y-3 max-w-xl">
+            <span className="text-[10px] font-sans font-bold uppercase tracking-[0.3em] text-brand-honey">
+              VanBasket Harvest Collection
+            </span>
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-6xl font-black tracking-tight leading-none text-brand-cream-light">
+              Pure & Raw.
+            </h1>
+            <p className="font-sans text-xs sm:text-sm text-brand-cream-light/80 font-light leading-relaxed max-w-md">
+              Ethically gathered wild honey and Jamun superfood products from the pristine canopies of Chhattisgarh.
             </p>
           </div>
         </div>
 
-        {/* 3 Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {staticProducts.map((item) => (
-            <div key={item.id} className="bg-white border border-brand-honey/15 rounded-[2.5rem] overflow-hidden p-6 shadow-sm flex flex-col justify-between">
-              <div className="space-y-6">
-                {/* Clickable Image to Redirect to Product detail view page */}
-                <Link 
-                  href={item.inquiryOnly ? `/contact-us?inquiry=${item.id}` : `/catalogue/${item.slug}`}
-                  className="relative block aspect-square rounded-[1.8rem] overflow-hidden bg-brand-cream-light border border-brand-cream-dark/30 group cursor-pointer"
-                >
-                  {item.freeShipping && (
-                    <div className="absolute top-3.5 right-3.5 z-10">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-sans font-bold uppercase tracking-wider shadow-sm bg-emerald-700 text-white">
-                        <Truck className="w-3 h-3 text-emerald-200" /> Free Shipping
-                      </span>
-                    </div>
-                  )}
-                  <Image 
-                    src={item.image} 
-                    alt={item.name} 
-                    fill 
-                    sizes="(max-w-768px) 100vw, 350px" 
-                    className="object-contain p-6 transition-transform duration-500 group-hover:scale-105" 
-                  />
-                </Link>
+        {/* Product Cards Grid — Matching Homepage Card Architecture */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 items-stretch">
+          {catalogueProducts.map((prod) => {
+            const activeVariant = selectedVariants[prod.id] || prod.variants[0];
+            const currentPrice = activeVariant?.price;
+            const currentOriginalPrice = activeVariant?.originalPrice;
+            const currentImage = activeVariant?.image || prod.img;
 
-                {/* Info */}
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    {item.tags?.map((tag) => (
-                      <span
-                        key={tag}
-                        className={`text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1 ${
-                          tag === "Free Shipping"
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200 font-black"
-                            : "bg-brand-honey/10 text-brand-honey"
-                        }`}
-                      >
-                        {tag === "Free Shipping" && <Truck className="w-2.5 h-2.5" />}
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <Link 
-                    href={item.inquiryOnly ? `/contact-us?inquiry=${item.id}` : `/catalogue/${item.slug}`}
-                    className="block hover:text-brand-honey transition"
-                  >
-                    <h3 className="font-serif font-black text-2xl text-brand-espresso">{item.name}</h3>
-                  </Link>
-                  <p className="font-sans text-[12px] text-brand-espresso-muted leading-relaxed font-light">{item.description}</p>
-                </div>
-              </div>
-
-              {/* Interaction Details */}
-              <div className="mt-8 pt-6 border-t border-brand-cream-dark/30">
-                {item.inquiryOnly ? (
-                  <div className="space-y-3">
-                    <div className="rounded-2xl bg-brand-cream-light/60 border border-brand-cream-dark/40 p-3.5 text-[11px] text-brand-espresso-muted space-y-1 font-sans">
-                      <p className="font-bold text-brand-espresso uppercase text-[9px] tracking-wider">Bulk & Commercial Supply Info:</p>
-                      <p className="text-[11px] leading-tight">• Direct Forest Reserve Allocations</p>
-                      <p className="text-[11px] leading-tight">• Custom Food-Grade Buckets & Drums</p>
-                      <p className="text-[11px] leading-tight">• 100% Pure, Unadulterated Guarantee</p>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <Link 
-                        href={`/contact-us?inquiry=${item.id}`} 
-                        className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-honey hover:bg-brand-honey-dark text-white px-5 text-[10px] font-sans font-bold uppercase tracking-widest transition shadow-sm"
-                      >
-                        <Mail className="w-3.5 h-3.5" /> Query Now
-                      </Link>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <a
-                          href={`https://wa.me/917724969017?text=Hello%20Van%20Basket,%20I%20am%20interested%20in%20inquiring%20about%20${encodeURIComponent(item.name)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 text-[9px] font-sans font-bold uppercase tracking-wider transition shadow-sm"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
-                        </a>
-
-                        <a
-                          href="tel:+917724969017"
-                          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-espresso text-brand-espresso hover:bg-brand-espresso hover:text-white px-3 text-[9px] font-sans font-bold uppercase tracking-wider transition"
-                        >
-                          <Phone className="w-3.5 h-3.5" /> Call Us
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-brand-espresso/60">Available packages</p>
-                    <div className="space-y-2">
-                      {item.variants.map((variant) => {
-                        const isAdded = addedItems[variant.id] || false;
-                        return (
-                          <div key={variant.id} className="flex items-center justify-between gap-3 rounded-2xl border border-brand-cream-dark/25 bg-brand-cream-light/35 px-4 py-2.5">
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <p className="font-semibold text-xs text-brand-espresso">{variant.size_label}</p>
-                                {item.freeShipping && (
-                                  <span className="text-[8px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                    <Truck className="w-2.5 h-2.5" /> Free Shipping
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[10px] text-brand-espresso/60">Rs. {Number(variant.price).toFixed(2)}</p>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Link href={`/catalogue/${item.slug}`} className="h-9 px-3 rounded-lg border border-brand-espresso text-brand-espresso text-[9px] font-bold uppercase tracking-widest flex items-center justify-center transition hover:bg-brand-espresso hover:text-white">
-                                View
-                              </Link>
-                              <button
-                                onClick={() => handleAddToCart(item, variant)}
-                                disabled={isAdded}
-                                className={`h-9 px-3 rounded-lg text-[9px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition ${
-                                  isAdded ? "bg-brand-forest text-brand-cream-light" : "bg-brand-espresso text-brand-cream-light hover:bg-brand-espresso/90"
-                                }`}
-                              >
-                                {isAdded ? <><Check className="w-3 h-3" /> Added</> : <><Plus className="w-3 h-3" /> Add</>}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+            return (
+              <div
+                key={prod.id}
+                onClick={() => handleProductCardClick(prod)}
+                className="group relative bg-brand-cream-light border border-brand-cream-dark/60 rounded-3xl overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5 flex flex-col justify-between cursor-pointer"
+              >
+                {/* Category / Stock Badge */}
+                {prod.badge && (
+                  <div className="absolute top-4 left-4 z-20">
+                    <span
+                      className={`px-3 py-1 rounded-full text-[10px] font-sans uppercase tracking-wider shadow-sm ${prod.badgeColor}`}
+                    >
+                      {prod.badge}
+                    </span>
                   </div>
                 )}
+
+                {/* Free Shipping Badge */}
+                {prod.freeShipping && (
+                  <div className="absolute top-4 right-4 z-20">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-sans font-black uppercase tracking-wider shadow-sm bg-emerald-700 text-white">
+                      <Truck className="w-3 h-3 text-emerald-200" /> Free Shipping
+                    </span>
+                  </div>
+                )}
+
+                {/* Product Image Showcase */}
+                <div className="relative aspect-square w-full bg-gradient-to-b from-brand-cream-warm/40 to-brand-cream-warm/15 p-5 flex items-center justify-center overflow-hidden">
+                  <Image
+                    src={currentImage}
+                    alt={prod.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-contain p-4 transition-transform duration-700 group-hover:scale-105"
+                  />
+                </div>
+
+                {/* Product Details & Actions */}
+                <div className="p-4 sm:p-5 flex flex-col flex-grow justify-between space-y-3.5">
+                  <div className="space-y-2.5">
+                    {/* Product Name & Price */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-serif text-base sm:text-lg font-bold text-brand-espresso group-hover:text-brand-honey transition-colors leading-snug">
+                          {prod.title}
+                        </h3>
+                        {activeVariant?.size_label && (
+                          <span className="text-[11px] font-sans text-brand-espresso/60 font-medium">
+                            {activeVariant.size_label}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Price Breakdown */}
+                      <div className="text-right shrink-0">
+                        {prod.isPurchasable ? (
+                          <>
+                            <div className="font-sans font-black text-base sm:text-lg text-brand-honey">
+                              ₹{currentPrice}
+                            </div>
+                            {currentOriginalPrice && (
+                              <div className="text-[10px] text-brand-espresso-muted line-through">
+                                ₹{currentOriginalPrice}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="font-sans font-black text-sm sm:text-base text-brand-honey">
+                            Wholesale
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Variant Badges (Batch Style) */}
+                    {prod.variants && prod.variants.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        {prod.variants.map((v) => {
+                          const isSelected = activeVariant?.id === v.id;
+                          return (
+                            <button
+                              key={v.id}
+                              type="button"
+                              onClick={(e) => handleVariantSelect(prod.id, v, e)}
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide transition-colors cursor-pointer border ${
+                                isSelected
+                                  ? "bg-brand-honey text-brand-espresso border-brand-honey font-bold shadow-xs"
+                                  : "bg-brand-cream-warm/90 text-brand-espresso border-brand-cream-dark/60 hover:border-brand-honey hover:bg-brand-honey/10"
+                              }`}
+                            >
+                              {v.size_label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bottom Action Section */}
+                  <div className="pt-3 border-t border-brand-cream-dark/30 space-y-2">
+                    {prod.isPurchasable ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          {/* Primary Button: Direct Checkout */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleBuyNow(prod, e)}
+                            className="flex-1 press-pop honey-glow-btn inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-xl bg-brand-honey hover:bg-brand-espresso text-brand-cream-light font-sans text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+                          >
+                            <Lock className="w-3.5 h-3.5" />
+                            <span>Buy Now</span>
+                            <ArrowRight className="w-3.5 h-3.5 ml-0.5 group-hover:translate-x-1 transition-transform" />
+                          </button>
+
+                          {/* Secondary Button: Add to Cart Drawer */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleAddToCartQuick(prod, e)}
+                            title="Add to Basket"
+                            aria-label={`Add ${prod.title} to basket`}
+                            className="h-11 w-11 flex-shrink-0 flex items-center justify-center rounded-xl border border-brand-cream-dark bg-brand-cream-light hover:bg-brand-cream-warm text-brand-espresso transition-colors shadow-sm hover:shadow cursor-pointer"
+                          >
+                            <ShoppingBag className="w-4 h-4 text-brand-espresso" />
+                          </button>
+                        </div>
+
+                        {/* Razorpay and Payment Security Guarantee */}
+                        <div className="flex items-center justify-between text-[10px] text-brand-espresso/60 font-medium px-1">
+                          <span className="inline-flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" /> Razorpay Secured
+                          </span>
+                          <span>COD Available</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/contact-us?inquiry=${prod.slug}`);
+                          }}
+                          className="w-full inline-flex items-center justify-center gap-1.5 h-11 px-3 rounded-xl bg-brand-espresso hover:bg-brand-honey text-brand-cream-light font-sans text-xs font-bold uppercase tracking-wider transition-colors duration-300 cursor-pointer"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>Inquire Wholesale</span>
+                          <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                        </button>
+                        <a
+                          href={`https://wa.me/917724969017?text=${encodeURIComponent(
+                            `Hello Van Basket, I want to inquire about Commercial Bulk Orders of ${prod.title}`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full inline-flex items-center justify-center gap-1.5 h-8 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-800 text-[10px] font-bold uppercase tracking-wider transition-colors"
+                        >
+                          <MessageSquare className="w-3 h-3" /> WhatsApp B2B
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
+
       <Footer />
     </div>
   );

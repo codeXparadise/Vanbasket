@@ -5,23 +5,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   Check,
   Minus,
   Plus,
-  ShieldCheck,
   Truck,
   ChevronLeft,
   ChevronRight,
   Star,
   ShoppingBag,
   Lock,
-  Tag,
-  RotateCcw,
   Sparkles,
-  Award,
   CheckCircle2,
-  MapPin,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -29,6 +23,7 @@ import { useCart } from "@/context/CartContext";
 import { useToast } from "@/components/Toast";
 import { createClient } from "@/utils/supabase/client";
 import { ProductReviews } from "@/components/ProductReviews";
+import { resolveVariant } from "@/utils/productCatalog";
 
 interface ProductImageRow {
   image_url: string;
@@ -68,19 +63,19 @@ const jamunFallback = {
   slug: "jamun-pulp",
   name: "Pure Wild Jamun Pulp (1kg)",
   description:
-    "100% natural, preservative-free Jamun (Black Plum) fruit pulp sustainably harvested from wild forest trees. Rich in anthocyanins, low glycemic index, and packed with vital dietary antioxidants.",
+    "100% natural, preservative-free Jamun (Black Plum) fruit pulp sustainably harvested from wild forest trees. Rich in anthocyanins, low glycemic index, and packed in food-grade sealed plastic packets for pure freshness.",
   image: "/assets/product/Jamun%20Pulp/jamun%20pulp/image-1.png",
 };
 
 const defaultHoneyVariants: VariantRow[] = [
-  { id: "a1111111-1111-1111-1111-111111111111", size_label: "250g", price: 229, stock_qty: 100, is_active: true },
-  { id: "b2222222-2222-2222-2222-222222222222", size_label: "500g", price: 429, stock_qty: 100, is_active: true },
-  { id: "c3333333-3333-3333-3333-333333333333", size_label: "1kg", price: 1099, stock_qty: 100, is_active: true },
-  { id: "c5555555-5555-5555-5555-555555555555", size_label: "5kg", price: 2599, stock_qty: 100, is_active: true },
+  { id: "van-honey-250g", size_label: "250g", price: 280, stock_qty: 100, is_active: true },
+  { id: "van-honey-500g", size_label: "500g", price: 480, stock_qty: 100, is_active: true },
+  { id: "van-honey-1kg", size_label: "1kg", price: 1099, stock_qty: 100, is_active: true },
+  { id: "van-honey-5kg", size_label: "5kg", price: 2599, stock_qty: 100, is_active: true },
 ];
 
 const defaultJamunVariants: VariantRow[] = [
-  { id: "e1111111-1111-1111-1111-111111111111", size_label: "1 kg", price: 499, stock_qty: 100, is_active: true },
+  { id: "van-jamun-pulp-1kg", size_label: "1 kg", price: 499, stock_qty: 100, is_active: true },
 ];
 
 const honeyGallery = [
@@ -108,12 +103,13 @@ export default function ProductPage() {
   const isJamunInitial = (params?.id || "").toLowerCase().includes("jamun");
   const [product, setProduct] = useState(isJamunInitial ? jamunFallback : fallback);
   const [variants, setVariants] = useState<VariantRow[]>(isJamunInitial ? defaultJamunVariants : defaultHoneyVariants);
+  const initialResolved = resolveVariant(params?.id || "");
   const [selectedVariantId, setSelectedVariantId] = useState(
-    params?.id && params.id !== "raw-wildflower-honey" && params.id !== "jamun-pulp"
-      ? params.id
+    initialResolved
+      ? initialResolved.id
       : isJamunInitial
-      ? "e1111111-1111-1111-1111-111111111111"
-      : "b2222222-2222-2222-2222-222222222222"
+      ? "van-jamun-pulp-1kg"
+      : "van-honey-500g"
   );
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -122,11 +118,7 @@ export default function ProductPage() {
   const [galleryImages, setGalleryImages] = useState<string[]>(isJamunInitial ? jamunGallery : honeyGallery);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
-  // Flipkart style pincode checker state
-  const [pincode, setPincode] = useState("");
-  const [pincodeStatus, setPincodeStatus] = useState<string | null>(null);
-
-  // Review stats state for Flipkart-style rating pill
+  // Review stats state for rating pill
   const [reviewStats, setReviewStats] = useState({
     average_rating: 4.8,
     total_reviews: 148,
@@ -142,12 +134,15 @@ export default function ProductPage() {
       if (error || !products) return;
 
       const paramStr = (params?.id || "").toLowerCase();
+      const resolvedFromParam = resolveVariant(params?.id || "");
+      const targetSlug = resolvedFromParam ? resolvedFromParam.productSlug : paramStr;
 
       const productData =
         (products as ProductRow[]).find((candidate) => {
+          if (candidate.slug && candidate.slug.toLowerCase() === targetSlug) return true;
           if (candidate.slug && candidate.slug.toLowerCase() === paramStr) return true;
           if (candidate.id === params?.id) return true;
-          if (candidate.product_variants?.some((variant) => variant.id === params?.id)) return true;
+          if (candidate.product_variants?.some((variant) => variant.id === params?.id || resolveVariant(variant.id)?.id === params?.id)) return true;
           if (candidate.name && candidate.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === paramStr) return true;
           return false;
         }) || (products as ProductRow[])[0];
@@ -158,15 +153,18 @@ export default function ProductPage() {
 
       const rawVariants = (productData.product_variants || []).filter((variant) => variant.is_active);
       const mappedVariants = rawVariants.map((v) => {
-        if (v.id === "a1111111-1111-1111-1111-111111111111") return { ...v, price: 229 };
-        if (v.id === "b2222222-2222-2222-2222-222222222222") return { ...v, price: 429 };
-        return v;
+        const resolved = resolveVariant(v.id) || resolveVariant(v.size_label) || resolveVariant((productData.slug || "") + "-" + v.size_label);
+        return {
+          ...v,
+          id: resolved ? resolved.id : v.id,
+          price: resolved ? resolved.price : Number(v.price),
+        };
       });
 
       // Ensure 5kg Honey variant is available even before Supabase SQL migration is executed
-      if (!isJamunProduct && !mappedVariants.some((v) => v.id === "c5555555-5555-5555-5555-555555555555" || v.size_label === "5kg")) {
+      if (!isJamunProduct && !mappedVariants.some((v) => v.id === "van-honey-5kg" || v.size_label === "5kg")) {
         mappedVariants.push({
-          id: "c5555555-5555-5555-5555-555555555555",
+          id: "van-honey-5kg",
           size_label: "5kg",
           price: 2599,
           stock_qty: 100,
@@ -212,13 +210,19 @@ export default function ProductPage() {
       if (typeof window !== "undefined") {
         const urlParams = new URLSearchParams(window.location.search);
         const urlVariant = urlParams.get("variant");
-        if (urlVariant && activeVariants.some((v) => v.id === urlVariant)) {
-          targetVariantId = urlVariant;
+        if (urlVariant) {
+          const resolvedQuery = resolveVariant(urlVariant);
+          const lookupId = resolvedQuery ? resolvedQuery.id : urlVariant;
+          if (activeVariants.some((v) => v.id === lookupId)) {
+            targetVariantId = lookupId;
+          }
         }
       }
 
       if (!targetVariantId && activeVariants.length > 0) {
-        const matched = activeVariants.find((v) => v.id === params?.id) || activeVariants[0];
+        const resolvedParam = resolveVariant(params?.id || "");
+        const targetId = resolvedParam ? resolvedParam.id : params?.id;
+        const matched = activeVariants.find((v) => v.id === targetId) || activeVariants.find((v) => v.id === "van-honey-500g") || activeVariants[0];
         targetVariantId = matched.id;
       }
 
@@ -258,9 +262,10 @@ export default function ProductPage() {
     [selectedVariantId, variants]
   );
 
-  const canOrder = Boolean(selectedVariant && UUID_PATTERN.test(selectedVariant.id));
+  const canOrder = Boolean(selectedVariant && (UUID_PATTERN.test(selectedVariant.id) || selectedVariant.id.startsWith("van-")));
   const isSoldOut = selectedVariant ? selectedVariant.stock_qty <= 0 : false;
   const displayImage = galleryImages[currentImgIndex] || fallback.image;
+  const isJamun = Boolean(product.slug === "jamun-pulp" || product.name.toLowerCase().includes("jamun") || (params?.id || "").toLowerCase().includes("jamun"));
 
   // Flipkart pricing calculation
   const currentPrice = selectedVariant ? Number(selectedVariant.price) : 599;
@@ -317,15 +322,6 @@ export default function ProductPage() {
 
   const prevSlide = () => {
     setCurrentImgIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
-  };
-
-  const handleCheckPincode = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!/^\d{6}$/.test(pincode.trim())) {
-      setPincodeStatus("Please enter a valid 6-digit Indian PIN code.");
-      return;
-    }
-    setPincodeStatus("Eligible for Fast Pan-India Delivery (Estimated 3-4 days)");
   };
 
   return (
@@ -423,34 +419,12 @@ export default function ProductPage() {
               </div>
             )}
 
-            {/* Desktop Action Buttons under Gallery (Flipkart Style) */}
-            <div className="hidden lg:grid grid-cols-2 gap-4 pt-4">
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={isSoldOut}
-                className="h-14 rounded-2xl border-2 border-brand-honey bg-brand-honey/15 hover:bg-brand-honey/25 text-brand-espresso font-sans font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
-              >
-                <ShoppingBag className="w-4 h-4 text-brand-espresso" />
-                <span>{added ? "Added to Basket" : "Add to Cart"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                disabled={isSoldOut}
-                className="h-14 rounded-2xl bg-brand-honey hover:bg-brand-espresso text-brand-cream-light font-sans font-black text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl cursor-pointer disabled:opacity-50"
-              >
-                <Lock className="w-4 h-4" />
-                <span>Buy Now (Razorpay)</span>
-              </button>
-            </div>
           </div>
 
-          {/* RIGHT COLUMN: Flipkart Product Info, Prices, Variants, Offers & Actions */}
+          {/* RIGHT COLUMN: Product Info, Description, Variants, Pricing, Quantity & Actions */}
           <div className="lg:col-span-6 space-y-6">
             
-            {/* Title & Brand */}
+            {/* 1. TOP: Title, Provenance & Ratings/Reviews */}
             <div>
               <span className="text-[11px] font-sans font-bold uppercase tracking-[0.25em] text-brand-terracotta">
                 Direct Forest Produce · Chhattisgarh
@@ -459,7 +433,7 @@ export default function ProductPage() {
                 {product.name}
               </h1>
 
-              {/* Flipkart-Style Rating Badge */}
+              {/* Rating & Reviews summary */}
               <div className="flex items-center gap-3 mt-3">
                 <a
                   href="#reviews"
@@ -474,64 +448,76 @@ export default function ProductPage() {
               </div>
             </div>
 
-            {/* Flipkart-Style Price Card */}
-            <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm space-y-3">
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <span className="font-sans font-black text-3xl sm:text-4xl text-brand-honey">
-                  ₹{currentPrice.toFixed(0)}
-                </span>
-                <span className="text-sm font-medium text-brand-espresso-muted line-through">
-                  ₹{originalMrp.toFixed(0)}
-                </span>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                  {discountPercent}% OFF
-                </span>
-              </div>
-              <div className="text-xs text-emerald-800 bg-emerald-50/80 border border-emerald-200/80 px-3.5 py-2 rounded-xl flex items-center gap-2 font-medium">
-                <Truck className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span>Inclusive of all taxes · <strong>Free Pan-India Shipping</strong> on this item</span>
-              </div>
-            </div>
-
-            {/* Flipkart-Style Available Offers Box */}
-            <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm space-y-3.5">
-              <h3 className="font-sans text-xs font-bold uppercase tracking-wider text-brand-espresso flex items-center gap-2">
-                <Tag className="w-4 h-4 text-brand-honey" /> Available Offers
-              </h3>
-              <ul className="space-y-2.5 text-xs text-brand-espresso/80">
-                <li className="flex items-start gap-2">
-                  <span className="text-emerald-700 font-bold mt-0.5">🏷️</span>
-                  <span>
-                    <strong className="text-brand-espresso">Special Price:</strong> Extra 10% off using coupon codes at checkout.
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-emerald-700 font-bold mt-0.5">💳</span>
-                  <span>
-                    <strong className="text-brand-espresso">Razorpay Gateway Offer:</strong> 100% secure payment via UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, & NetBanking.
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-emerald-700 font-bold mt-0.5">📦</span>
-                  <span>
-                    <strong className="text-brand-espresso">Cash on Delivery:</strong> Pay in cash or UPI upon delivery at your doorstep.
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Flipkart-Style Pack Size / Variant Selector */}
+            {/* 2. DIRECTLY BELOW TITLE & RATING: Product Description & Integrated Specifications */}
             <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm space-y-4">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-brand-espresso mb-1.5">
+                  About This Forest Harvest
+                </h3>
+                <p className="text-xs sm:text-sm text-brand-espresso-muted font-light leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
+
+              {/* Specifications directly integrated into product description */}
+              <div className="border-t border-brand-cream-dark/40 pt-4 space-y-2.5">
+                <h4 className="font-sans text-[11px] font-bold uppercase tracking-wider text-brand-espresso">
+                  Product Specifications
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                  <div className="flex justify-between border-b border-brand-cream-dark/20 pb-1.5">
+                    <span className="text-brand-espresso/60">Harvest Origin</span>
+                    <span className="font-bold text-brand-espresso">Chhattisgarh Forests</span>
+                  </div>
+                  <div className="flex justify-between border-b border-brand-cream-dark/20 pb-1.5">
+                    <span className="text-brand-espresso/60">{isJamun ? "Produce Type" : "Bee Species"}</span>
+                    <span className="font-bold text-brand-espresso">
+                      {isJamun ? "Wild Forest Jamun Fruit" : "Wild Apis dorsata"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-brand-cream-dark/20 pb-1.5">
+                    <span className="text-brand-espresso/60">Processing</span>
+                    <span className="font-bold text-brand-espresso">
+                      {isJamun ? "100% Pure Natural Pulp (Seedless)" : "100% Raw & Unpasteurized"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-brand-cream-dark/20 pb-1.5">
+                    <span className="text-brand-espresso/60">Packaging</span>
+                    <span className="font-bold text-brand-espresso">
+                      {isJamun ? "Food Grade Plastic Packet" : "Food Grade UV Glass Jar"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-brand-cream-dark/20 pb-1.5">
+                    <span className="text-brand-espresso/60">Purity</span>
+                    <span className="font-bold text-brand-espresso">
+                      {isJamun ? "Zero Added Sugar & Preservatives" : "Periodic NMR & Lab Tested"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-brand-cream-dark/20 pb-1.5">
+                    <span className="text-brand-espresso/60">Shelf Life</span>
+                    <span className="font-bold text-brand-espresso">
+                      {isJamun ? "12 Months" : "18 Months"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. VARIANT SELECTOR: Below description, only size/weight values */}
+            <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm space-y-3.5">
               <div className="flex items-center justify-between">
                 <span className="font-sans text-xs font-bold uppercase tracking-wider text-brand-espresso">
                   Select Pack Size:
                 </span>
-                <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> In Stock & Ready to Ship
-                </span>
+                {selectedVariant && (
+                  <span className="text-xs font-semibold text-brand-espresso/70">
+                    Selected: <span className="text-brand-espresso font-bold">{selectedVariant.size_label}</span>
+                  </span>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {/* Minimal Variant Buttons: Only size/weight values */}
+              <div className="flex flex-wrap gap-2.5">
                 {variants.map((v) => {
                   const isSelected = selectedVariant?.id === v.id;
                   return (
@@ -539,163 +525,89 @@ export default function ProductPage() {
                       key={v.id}
                       type="button"
                       onClick={() => setSelectedVariantId(v.id)}
-                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                      className={`px-5 py-2.5 rounded-2xl text-xs font-bold font-sans transition-all duration-200 cursor-pointer ${
                         isSelected
-                          ? "border-brand-honey bg-brand-honey/10 ring-2 ring-brand-honey/30 shadow-sm"
-                          : "border-brand-cream-dark/60 bg-brand-cream-light/50 hover:border-brand-espresso/60"
+                          ? "bg-brand-espresso text-brand-cream-light border-2 border-brand-espresso shadow-sm scale-[1.02]"
+                          : "bg-white text-brand-espresso border-2 border-brand-cream-dark/60 hover:border-brand-honey hover:bg-brand-cream-light/40"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs font-bold text-brand-espresso">{v.size_label}</div>
-                        <span className="text-[8px] font-bold text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200">
-                          Free Shipping
-                        </span>
-                      </div>
-                      <div className="font-sans font-black text-sm text-brand-honey mt-1">
-                        ₹{Number(v.price).toFixed(0)}
-                      </div>
-                      {isSelected && (
-                        <div className="text-[10px] font-bold text-emerald-700 mt-1 flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Selected
-                        </div>
-                      )}
+                      {v.size_label}
                     </button>
                   );
                 })}
               </div>
+            </div>
 
-              {/* Quantity Picker */}
-              <div className="flex items-center gap-4 pt-3 border-t border-brand-cream-dark/30">
-                <span className="text-xs font-bold text-brand-espresso">Quantity:</span>
-                <div className="inline-flex items-center border border-brand-cream-dark bg-brand-cream-light rounded-xl overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    aria-label="Decrease quantity"
-                    className="p-2.5 hover:bg-brand-cream-warm transition cursor-pointer"
-                  >
-                    <Minus className="w-3.5 h-3.5 text-brand-espresso" />
-                  </button>
-                  <span className="w-10 text-center text-xs font-bold font-sans">{quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(Math.min(99, quantity + 1))}
-                    aria-label="Increase quantity"
-                    className="p-2.5 hover:bg-brand-cream-warm transition cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5 text-brand-espresso" />
-                  </button>
+            {/* 4. PRICE & QUANTITY + 5. ACTION BUTTONS: Directly below variant selector */}
+            <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm space-y-6">
+              
+              {/* Dynamic Price & Quantity Row */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Dynamic Price */}
+                <div>
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <span className="font-sans font-black text-3xl sm:text-4xl text-brand-honey">
+                      ₹{currentPrice.toFixed(0)}
+                    </span>
+                    <span className="text-sm font-medium text-brand-espresso-muted line-through">
+                      ₹{originalMrp.toFixed(0)}
+                    </span>
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                      {discountPercent}% OFF
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-emerald-800 flex items-center gap-1.5 mt-1 font-medium">
+                    <Truck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    <span>Free Pan-India Delivery · Inclusive of all taxes</span>
+                  </div>
+                </div>
+
+                {/* Quantity Controls */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-brand-espresso">Quantity:</span>
+                  <div className="inline-flex items-center border border-brand-cream-dark bg-brand-cream-light rounded-xl overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      aria-label="Decrease quantity"
+                      className="p-2.5 hover:bg-brand-cream-warm transition cursor-pointer"
+                    >
+                      <Minus className="w-3.5 h-3.5 text-brand-espresso" />
+                    </button>
+                    <span className="w-10 text-center text-xs font-bold font-sans">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.min(99, quantity + 1))}
+                      aria-label="Increase quantity"
+                      className="p-2.5 hover:bg-brand-cream-warm transition cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-brand-espresso" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Mobile Action Buttons (Visible on Mobile & Tablet) */}
-            <div className="grid lg:hidden grid-cols-2 gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={isSoldOut}
-                className="h-13 rounded-2xl border-2 border-brand-honey bg-brand-honey/15 hover:bg-brand-honey/25 text-brand-espresso font-sans font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
-              >
-                <ShoppingBag className="w-4 h-4 text-brand-espresso" />
-                <span>{added ? "Added" : "Add to Cart"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                disabled={isSoldOut}
-                className="h-13 rounded-2xl bg-brand-honey hover:bg-brand-espresso text-brand-cream-light font-sans font-black text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 shadow-lg cursor-pointer disabled:opacity-50"
-              >
-                <Lock className="w-4 h-4" />
-                <span>Buy Now</span>
-              </button>
-            </div>
-
-            {/* Flipkart-Style Delivery Pincode Checker */}
-            <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm space-y-3">
-              <label htmlFor="delivery-pincode" className="font-sans text-xs font-bold uppercase tracking-wider text-brand-espresso flex items-center gap-2 cursor-pointer">
-                <MapPin className="w-4 h-4 text-brand-honey" /> Check Delivery to Your Pincode
-              </label>
-              <form onSubmit={handleCheckPincode} className="flex gap-2">
-                <input
-                  id="delivery-pincode"
-                  name="pincode"
-                  type="text"
-                  maxLength={6}
-                  placeholder="Enter 6-digit Indian Pincode"
-                  aria-label="Enter 6-digit Indian Pincode"
-                  value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-brand-cream-dark bg-brand-cream-light text-xs font-sans text-brand-espresso focus:outline-none focus:ring-2 focus:ring-brand-honey"
-                />
+              {/* Action Buttons: Add to Cart and Buy Now */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-brand-cream-dark/40">
                 <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-brand-espresso text-brand-cream-light text-xs font-bold uppercase tracking-wider hover:bg-brand-honey transition-colors cursor-pointer"
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={isSoldOut}
+                  className="h-14 rounded-2xl border-2 border-brand-honey bg-brand-honey/15 hover:bg-brand-honey/25 text-brand-espresso font-sans font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
                 >
-                  Check
+                  <ShoppingBag className="w-4 h-4 text-brand-espresso" />
+                  <span>{added ? "Added to Basket" : "Add to Cart"}</span>
                 </button>
-              </form>
-              {pincodeStatus && (
-                <p className={`text-xs font-medium ${pincodeStatus.includes("Eligible") ? "text-emerald-700" : "text-amber-800"}`}>
-                  {pincodeStatus}
-                </p>
-              )}
-            </div>
 
-            {/* Flipkart Trust Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { icon: Truck, title: "Pan-India Free Delivery", desc: "Dispatched in 24h" },
-                { icon: ShieldCheck, title: "Razorpay Protected", desc: "256-bit SSL Encrypted" },
-                { icon: RotateCcw, title: "7 Days Replacement", desc: "Hassle-free guarantee" },
-                { icon: Award, title: "FSSAI & NMR Tested", desc: "100% Raw Forest Harvest" },
-              ].map((item, idx) => (
-                <div key={idx} className="bg-white border border-brand-cream-dark/50 p-3.5 rounded-2xl text-center space-y-1 shadow-2xs">
-                  <item.icon className="w-5 h-5 mx-auto text-brand-honey" />
-                  <div className="text-[11px] font-bold text-brand-espresso">{item.title}</div>
-                  <div className="text-[10px] text-brand-espresso-muted">{item.desc}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Product Description & Specifications */}
-            <div className="bg-white border border-brand-cream-dark/60 rounded-3xl p-6 shadow-sm space-y-4">
-              <h3 className="font-serif text-xl font-bold text-brand-espresso">Product Details & Provenance</h3>
-              <p className="text-xs sm:text-sm text-brand-espresso-muted font-light leading-relaxed">
-                {product.description}
-              </p>
-
-              <div className="border-t border-brand-cream-dark/40 pt-4">
-                <h4 className="font-sans text-xs font-bold uppercase tracking-wider text-brand-espresso mb-3">
-                  Specifications
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2.5 text-xs">
-                  <div className="flex justify-between sm:justify-start sm:gap-6 border-b border-brand-cream-dark/20 pb-1.5">
-                    <span className="text-brand-espresso/60">Harvest Region</span>
-                    <span className="font-bold text-brand-espresso">Chhattisgarh Forests</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start sm:gap-6 border-b border-brand-cream-dark/20 pb-1.5">
-                    <span className="text-brand-espresso/60">Bee Species</span>
-                    <span className="font-bold text-brand-espresso">Wild Apis dorsata</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start sm:gap-6 border-b border-brand-cream-dark/20 pb-1.5">
-                    <span className="text-brand-espresso/60">Processing</span>
-                    <span className="font-bold text-brand-espresso">100% Raw & Unpasteurized</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start sm:gap-6 border-b border-brand-cream-dark/20 pb-1.5">
-                    <span className="text-brand-espresso/60">Purity Verification</span>
-                    <span className="font-bold text-brand-espresso">Periodic NMR & Lab Tested</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start sm:gap-6 border-b border-brand-cream-dark/20 pb-1.5">
-                    <span className="text-brand-espresso/60">Shelf Life</span>
-                    <span className="font-bold text-brand-espresso">18 Months</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start sm:gap-6 border-b border-brand-cream-dark/20 pb-1.5">
-                    <span className="text-brand-espresso/60">Packaging</span>
-                    <span className="font-bold text-brand-espresso">Food Grade UV Glass Jar</span>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={isSoldOut}
+                  className="h-14 rounded-2xl bg-brand-honey hover:bg-brand-espresso text-brand-cream-light font-sans font-black text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl cursor-pointer disabled:opacity-50"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Buy Now (Razorpay)</span>
+                </button>
               </div>
             </div>
 
