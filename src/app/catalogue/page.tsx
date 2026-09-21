@@ -16,6 +16,8 @@ import {
   Truck,
   Mail,
   MessageSquare,
+  Sparkles,
+  ArrowDown,
 } from "lucide-react";
 
 interface VariantInfo {
@@ -230,28 +232,109 @@ export default function CataloguePage() {
     <div className="relative min-h-screen bg-brand-cream-light text-brand-espresso flex flex-col justify-between">
       <Navbar />
 
-      <main className="flex-grow pt-28 pb-24 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto w-full">
-        {/* Banner Section */}
-        <div className="relative mb-12 min-h-[260px] md:min-h-[340px] overflow-hidden bg-brand-espresso text-brand-cream-light flex items-end p-6 sm:p-10 md:p-14 rounded-3xl shadow-xl">
-          <Image
-            src="/assets/hero/catalogue/vanbasket-catalogue-hero.jpg"
-            alt="Wild forest honey catalogue"
-            fill
-            sizes="100vw"
-            className="object-cover opacity-60 scale-105 transition-transform duration-[4000ms]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-espresso/95 via-brand-espresso/70 to-transparent" />
-          <div className="relative z-10 space-y-3 max-w-xl">
-            <span className="text-[10px] font-sans font-bold uppercase tracking-[0.3em] text-brand-honey">
-              VanBasket Harvest Collection
-            </span>
-            <h1 className="font-serif text-3xl sm:text-4xl md:text-6xl font-black tracking-tight leading-none text-brand-cream-light">
-              Pure & Raw.
-            </h1>
-            <p className="font-sans text-xs sm:text-sm text-brand-cream-light/80 font-light leading-relaxed max-w-md">
-              Ethically gathered wild honey and Jamun superfood products from the pristine canopies of Chhattisgarh.
-            </p>
+      {/* Full-Screen Hero Section */}
+      <section className="relative w-full min-h-[calc(100svh-72px)] md:min-h-[calc(100vh-72px)] flex items-center overflow-hidden bg-brand-espresso text-brand-cream-light select-none">
+        {/* Background Hero Image */}
+        <Image
+          src="/assets/hero/catalogue/vanbasket-catalogue-hero.jpg"
+          alt="Wild forest honey catalogue"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center scale-105 transition-transform duration-[6000ms] pointer-events-none"
+        />
+
+        {/* Multi-layered Cinematic Gradients */}
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-espresso/95 via-brand-espresso/80 to-brand-espresso/45 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-espresso/90 via-transparent to-brand-espresso/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-brand-espresso/20 mix-blend-multiply pointer-events-none" />
+
+        {/* Hero Content Container */}
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 md:px-12 w-full py-20 sm:py-24 md:py-32 flex flex-col justify-center">
+          <div className="max-w-3xl space-y-4 sm:space-y-6">
+            <div className="inline-flex items-center gap-2 border border-brand-honey/40 bg-brand-cream-light/10 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-xs font-sans font-bold uppercase tracking-[0.25em] text-brand-honey backdrop-blur-md shadow-sm w-fit">
+              <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-brand-honey shrink-0" />
+              <span>VanBasket Harvest Collection</span>
+            </div>
+
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-brand-cream-light">
+                Pure, Raw & <br className="hidden sm:inline" />
+                <span className="text-brand-honey font-serif">Wildly Authentic.</span>
+              </h1>
+              <p className="font-sans text-xs sm:text-base md:text-lg text-brand-cream-light/85 font-light leading-relaxed max-w-2xl">
+                Ethically gathered wild honey and Jamun superfood products from the pristine canopies of Chhattisgarh. 100% natural, unfiltered, and delivered pure to your table.
+              </p>
+            </div>
+
+            {/* Quality & Trust Badges */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 pt-2 max-w-2xl">
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl px-3 py-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-brand-honey shrink-0" />
+                <span className="text-[11px] sm:text-xs font-medium text-brand-cream-light">100% Lab Tested</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl px-3 py-2">
+                <Truck className="w-3.5 h-3.5 text-brand-honey shrink-0" />
+                <span className="text-[11px] sm:text-xs font-medium text-brand-cream-light">Free Shipping</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl px-3 py-2">
+                <Sparkles className="w-3.5 h-3.5 text-brand-honey shrink-0" />
+                <span className="text-[11px] sm:text-xs font-medium text-brand-cream-light">Wild Apis Dorsata</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-xl px-3 py-2">
+                <Lock className="w-3.5 h-3.5 text-brand-honey shrink-0" />
+                <span className="text-[11px] sm:text-xs font-medium text-brand-cream-light">Razorpay Secured</span>
+              </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="pt-2 sm:pt-4 flex flex-wrap items-center gap-3 sm:gap-4">
+              <a
+                href="#products-collection"
+                className="press-pop honey-glow-btn inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-6 sm:px-8 rounded-xl bg-brand-honey hover:bg-brand-espresso text-brand-cream-light font-sans text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Shop Products</span>
+                <ArrowRight className="w-4 h-4 ml-0.5" />
+              </a>
+              <Link
+                href="/about-us"
+                className="inline-flex items-center justify-center gap-2 h-11 sm:h-12 px-5 sm:px-6 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-brand-cream-light font-sans text-xs sm:text-sm font-medium tracking-wide transition-all backdrop-blur"
+              >
+                Our Forest Story
+              </Link>
+            </div>
           </div>
+        </div>
+
+        {/* Scroll to Explore Anchor */}
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 opacity-75 hover:opacity-100 transition-opacity">
+          <span className="text-[9px] sm:text-[10px] font-sans uppercase tracking-[0.25em] text-brand-cream-light/70 font-medium">
+            Explore products
+          </span>
+          <a
+            href="#products-collection"
+            className="animate-bounce p-1 text-brand-honey"
+            aria-label="Scroll down to products"
+          >
+            <ArrowDown className="w-4 h-4" />
+          </a>
+        </div>
+      </section>
+
+      {/* Main Products Grid Section */}
+      <main id="products-collection" className="flex-grow pt-14 sm:pt-20 pb-24 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto w-full">
+        {/* Section Heading */}
+        <div className="mb-8 sm:mb-12 text-center max-w-2xl mx-auto space-y-2">
+          <span className="text-[11px] sm:text-xs font-sans font-bold uppercase tracking-[0.25em] text-brand-honey">
+            Direct from Wild Canopies
+          </span>
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-brand-espresso">
+            Our Forest Harvests
+          </h2>
+          <p className="text-xs sm:text-sm text-brand-espresso/70 font-light max-w-lg mx-auto">
+            Packed with vital living enzymes, active phytonutrients, and authentic tribal heritage.
+          </p>
         </div>
 
         {/* Product Cards Grid — Matching Homepage Card Architecture */}
