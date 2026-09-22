@@ -315,14 +315,23 @@ export const OurProcessCycle: React.FC = () => {
     },
   ];
 
+  const nodePositions = [
+    { left: "19.4%", top: "30.6%", titleMaxW: "max-w-[70px] xs:max-w-[84px] sm:max-w-[130px] md:max-w-[150px]" }, // 1: Top-Left (Collection)
+    { left: "50.0%", top: "14.5%", titleMaxW: "max-w-[70px] xs:max-w-[82px] sm:max-w-[125px] md:max-w-[145px]" }, // 2: Top-Center (Transportation)
+    { left: "80.6%", top: "30.6%", titleMaxW: "max-w-[70px] xs:max-w-[84px] sm:max-w-[130px] md:max-w-[150px]" }, // 3: Top-Right (Quality assurance)
+    { left: "80.6%", top: "69.4%", titleMaxW: "max-w-[70px] xs:max-w-[82px] sm:max-w-[125px] md:max-w-[145px]" }, // 4: Bottom-Right (Packaging)
+    { left: "50.0%", top: "85.5%", titleMaxW: "max-w-[70px] xs:max-w-[82px] sm:max-w-[125px] md:max-w-[145px]" }, // 5: Bottom-Center (Storage)
+    { left: "19.4%", top: "69.4%", titleMaxW: "max-w-[70px] xs:max-w-[84px] sm:max-w-[130px] md:max-w-[150px]" }, // 6: Bottom-Left (Sales & marketing)
+  ];
+
   return (
-    <section className="py-16 sm:py-24 bg-[#F5EFE6] text-brand-espresso font-sans relative overflow-hidden border-b border-brand-cream-dark/50">
+    <section className="py-12 sm:py-20 md:py-24 bg-[#F5EFE6] text-brand-espresso font-sans relative overflow-hidden border-b border-brand-cream-dark/50">
       {/* Decorative Subtle Background Flourish */}
       <div className="absolute inset-0 bg-[radial-gradient(#2D5A27_0.75px,transparent_0.75px)] [background-size:24px_24px] opacity-[0.035] pointer-events-none" />
 
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="relative max-w-6xl mx-auto px-2 sm:px-6 md:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto space-y-2 mb-10 sm:mb-16">
+        <div className="text-center max-w-2xl mx-auto space-y-2 mb-8 sm:mb-14">
           <span className="inline-block text-[10px] font-bold uppercase tracking-[0.28em] text-[#2D5A27] bg-[#2D5A27]/10 px-3.5 py-1 rounded-full">
             Lifecycle & Value Chain
           </span>
@@ -337,88 +346,99 @@ export const OurProcessCycle: React.FC = () => {
         {/* ========================================================================= */}
         {/* UNIFIED CIRCULAR PROCESS CYCLE (Identical on Mobile & Desktop)             */}
         {/* ========================================================================= */}
-        <div className="relative w-full max-w-[920px] mx-auto aspect-[16/11] select-none">
-          {/* SVG Background connecting circular arrows */}
+        <div
+          className="relative w-full max-w-[840px] mx-auto select-none aspect-[900/620]"
+          style={{ aspectRatio: "900 / 620" }}
+        >
+          {/* SVG Background connecting circular black arrows */}
           <svg viewBox="0 0 900 620" className="absolute inset-0 w-full h-full pointer-events-none z-0">
             <defs>
-              {/* Arrowhead marker */}
-              <marker id="greenArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#33691E" />
+              {/* Sleek Black Arrowhead Marker */}
+              <marker
+                id="blackCycleArrow"
+                viewBox="0 0 10 10"
+                refX="6"
+                refY="5"
+                markerWidth="3.6"
+                markerHeight="3.6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#18181B" />
               </marker>
             </defs>
 
             {/* Curved Arrow 1 -> 2: From Collection (top-left) to Transportation (top-center) */}
             <path
-              d="M 235 155 Q 310 95 400 95"
+              d="M 280 150 Q 325 90 355 90"
               fill="none"
-              stroke="#33691E"
-              strokeWidth="9"
+              stroke="#18181B"
+              strokeWidth="2.5"
               strokeLinecap="round"
-              markerEnd="url(#greenArrow)"
-              className="opacity-90"
+              markerEnd="url(#blackCycleArrow)"
+              className="opacity-80"
             />
 
             {/* Curved Arrow 2 -> 3: From Transportation (top-center) to Processing (top-right) */}
             <path
-              d="M 525 95 Q 615 95 680 155"
+              d="M 545 90 Q 575 90 620 150"
               fill="none"
-              stroke="#33691E"
-              strokeWidth="9"
+              stroke="#18181B"
+              strokeWidth="2.5"
               strokeLinecap="round"
-              markerEnd="url(#greenArrow)"
-              className="opacity-90"
+              markerEnd="url(#blackCycleArrow)"
+              className="opacity-80"
             />
 
             {/* Curved Arrow 3 -> 4: From Processing (top-right) to Packaging (bottom-right) */}
             <path
-              d="M 755 245 Q 780 320 755 390"
+              d="M 740 285 Q 760 315 740 345"
               fill="none"
-              stroke="#33691E"
-              strokeWidth="9"
+              stroke="#18181B"
+              strokeWidth="2.5"
               strokeLinecap="round"
-              markerEnd="url(#greenArrow)"
-              className="opacity-90"
+              markerEnd="url(#blackCycleArrow)"
+              className="opacity-80"
             />
 
             {/* Curved Arrow 4 -> 5: From Packaging (bottom-right) to Storage (bottom-center) */}
             <path
-              d="M 685 480 Q 615 540 525 540"
+              d="M 620 470 Q 575 530 545 530"
               fill="none"
-              stroke="#33691E"
-              strokeWidth="9"
+              stroke="#18181B"
+              strokeWidth="2.5"
               strokeLinecap="round"
-              markerEnd="url(#greenArrow)"
-              className="opacity-90"
+              markerEnd="url(#blackCycleArrow)"
+              className="opacity-80"
             />
 
             {/* Curved Arrow 5 -> 6: From Storage (bottom-center) to Sales & Marketing (bottom-left) */}
             <path
-              d="M 400 540 Q 310 540 240 480"
+              d="M 355 530 Q 325 530 280 470"
               fill="none"
-              stroke="#33691E"
-              strokeWidth="9"
+              stroke="#18181B"
+              strokeWidth="2.5"
               strokeLinecap="round"
-              markerEnd="url(#greenArrow)"
-              className="opacity-90"
+              markerEnd="url(#blackCycleArrow)"
+              className="opacity-80"
             />
 
             {/* Curved Arrow 6 -> 1: From Sales & Marketing (bottom-left) to Collection (top-left) */}
             <path
-              d="M 165 390 Q 140 320 165 245"
+              d="M 160 345 Q 140 315 160 285"
               fill="none"
-              stroke="#33691E"
-              strokeWidth="9"
+              stroke="#18181B"
+              strokeWidth="2.5"
               strokeLinecap="round"
-              markerEnd="url(#greenArrow)"
-              className="opacity-90"
+              markerEnd="url(#blackCycleArrow)"
+              className="opacity-80"
             />
           </svg>
 
           {/* Central Starburst Badge: "Our process" */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-            <div className="relative flex items-center justify-center cursor-default group">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+            <div className="relative flex items-center justify-center cursor-default group pointer-events-auto">
               {/* Organic 16-point Starburst Badge SVG */}
-              <svg viewBox="0 0 160 160" className="w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 drop-shadow-md transition-transform duration-500 group-hover:scale-105">
+              <svg viewBox="0 0 160 160" className="w-14 h-14 xs:w-16 xs:h-16 sm:w-24 sm:h-24 md:w-30 md:h-30 lg:w-36 lg:h-36 drop-shadow-md transition-transform duration-500 group-hover:scale-105">
                 <path
                   d="M80 0 L94 18 L116 12 L122 34 L144 38 L140 60 L158 72 L146 90 L158 108 L140 120 L144 142 L122 146 L116 168 L94 162 L80 180 L66 162 L44 168 L38 146 L16 142 L20 120 L2 108 L14 90 L2 72 L20 60 L16 38 L38 34 L44 12 L66 18 Z"
                   fill="#33691E"
@@ -428,116 +448,46 @@ export const OurProcessCycle: React.FC = () => {
               </svg>
               {/* Badge Text */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="font-serif text-[9px] xs:text-[11px] sm:text-base md:text-lg lg:text-xl font-black text-brand-cream-light text-center leading-tight drop-shadow tracking-wide">
+                <span className="font-serif text-[9px] xs:text-[10px] sm:text-sm md:text-base lg:text-lg font-black text-brand-cream-light text-center leading-tight drop-shadow tracking-wide">
                   Our<br />process
                 </span>
               </div>
             </div>
           </div>
 
-          {/* 6 Step Nodes Positioned in Ring */}
-          
-          {/* Node 1: Collection of Jamun fruit and forest honey (Top-Left) */}
-          <div
-            onClick={() => setActiveStep(activeStep === 1 ? null : 1)}
-            onMouseEnter={() => setActiveStep(1)}
-            onMouseLeave={() => setActiveStep(null)}
-            className={`absolute left-[0.5%] sm:left-[2%] lg:left-[3%] top-[4%] sm:top-[6%] lg:top-[8%] w-[86px] xs:w-[105px] sm:w-[160px] md:w-[210px] lg:w-[230px] flex flex-col items-center text-center transition-all duration-300 z-10 cursor-pointer ${
-              activeStep === 1 ? "scale-105" : "hover:scale-102"
-            }`}
-          >
-            <div className="p-0.5 xs:p-1 sm:p-2 transition-transform duration-300">
-              {steps[0].icon}
-            </div>
-            <h3 className="font-sans text-[7px] xs:text-[8.5px] sm:text-xs lg:text-[13px] font-bold text-brand-espresso leading-tight sm:leading-snug max-w-[82px] xs:max-w-[100px] sm:max-w-[170px] md:max-w-[200px] mt-0.5 sm:mt-1">
-              {steps[0].title}
-            </h3>
-          </div>
+          {/* 6 Step Nodes Positioned in Ring with Exact Geometric Coordinates */}
+          {steps.map((step, idx) => {
+            const pos = nodePositions[idx];
+            const isActive = activeStep === step.id;
 
-          {/* Node 2: Transportation (Top-Center) */}
-          <div
-            onClick={() => setActiveStep(activeStep === 2 ? null : 2)}
-            onMouseEnter={() => setActiveStep(2)}
-            onMouseLeave={() => setActiveStep(null)}
-            className={`absolute left-1/2 -translate-x-1/2 top-[-2%] sm:top-[0%] w-[86px] xs:w-[105px] sm:w-[160px] md:w-[210px] lg:w-[230px] flex flex-col items-center text-center transition-all duration-300 z-10 cursor-pointer ${
-              activeStep === 2 ? "scale-105" : "hover:scale-102"
-            }`}
-          >
-            <div className="p-0.5 xs:p-1 sm:p-2 transition-transform duration-300">
-              {steps[1].icon}
-            </div>
-            <h3 className="font-sans text-[7px] xs:text-[8.5px] sm:text-xs lg:text-[13px] font-bold text-brand-espresso leading-tight sm:leading-snug max-w-[82px] xs:max-w-[100px] sm:max-w-[170px] md:max-w-[200px] mt-0.5 sm:mt-1">
-              {steps[1].title}
-            </h3>
-          </div>
-
-          {/* Node 3: Quality assurance & processing (Top-Right) */}
-          <div
-            onClick={() => setActiveStep(activeStep === 3 ? null : 3)}
-            onMouseEnter={() => setActiveStep(3)}
-            onMouseLeave={() => setActiveStep(null)}
-            className={`absolute right-[0.5%] sm:right-[2%] lg:right-[3%] top-[4%] sm:top-[6%] lg:top-[8%] w-[86px] xs:w-[105px] sm:w-[160px] md:w-[210px] lg:w-[230px] flex flex-col items-center text-center transition-all duration-300 z-10 cursor-pointer ${
-              activeStep === 3 ? "scale-105" : "hover:scale-102"
-            }`}
-          >
-            <div className="p-0.5 xs:p-1 sm:p-2 transition-transform duration-300">
-              {steps[2].icon}
-            </div>
-            <h3 className="font-sans text-[7px] xs:text-[8.5px] sm:text-xs lg:text-[13px] font-bold text-brand-espresso leading-tight sm:leading-snug max-w-[82px] xs:max-w-[100px] sm:max-w-[170px] md:max-w-[200px] mt-0.5 sm:mt-1">
-              {steps[2].title}
-            </h3>
-          </div>
-
-          {/* Node 4: Packaging (Bottom-Right) */}
-          <div
-            onClick={() => setActiveStep(activeStep === 4 ? null : 4)}
-            onMouseEnter={() => setActiveStep(4)}
-            onMouseLeave={() => setActiveStep(null)}
-            className={`absolute right-[0.5%] sm:right-[2%] lg:right-[3%] bottom-[3%] sm:bottom-[5%] lg:bottom-[8%] w-[86px] xs:w-[105px] sm:w-[160px] md:w-[210px] lg:w-[230px] flex flex-col items-center text-center transition-all duration-300 z-10 cursor-pointer ${
-              activeStep === 4 ? "scale-105" : "hover:scale-102"
-            }`}
-          >
-            <div className="p-0.5 xs:p-1 sm:p-2 transition-transform duration-300">
-              {steps[3].icon}
-            </div>
-            <h3 className="font-sans text-[7px] xs:text-[8.5px] sm:text-xs lg:text-[13px] font-bold text-brand-espresso leading-tight sm:leading-snug max-w-[82px] xs:max-w-[100px] sm:max-w-[170px] md:max-w-[200px] mt-0.5 sm:mt-1">
-              {steps[3].title}
-            </h3>
-          </div>
-
-          {/* Node 5: Storage (Bottom-Center) */}
-          <div
-            onClick={() => setActiveStep(activeStep === 5 ? null : 5)}
-            onMouseEnter={() => setActiveStep(5)}
-            onMouseLeave={() => setActiveStep(null)}
-            className={`absolute left-1/2 -translate-x-1/2 bottom-[-2%] sm:bottom-[0%] w-[86px] xs:w-[105px] sm:w-[160px] md:w-[210px] lg:w-[230px] flex flex-col items-center text-center transition-all duration-300 z-10 cursor-pointer ${
-              activeStep === 5 ? "scale-105" : "hover:scale-102"
-            }`}
-          >
-            <div className="p-0.5 xs:p-1 sm:p-2 transition-transform duration-300">
-              {steps[4].icon}
-            </div>
-            <h3 className="font-sans text-[7px] xs:text-[8.5px] sm:text-xs lg:text-[13px] font-bold text-brand-espresso leading-tight sm:leading-snug max-w-[82px] xs:max-w-[100px] sm:max-w-[170px] md:max-w-[200px] mt-0.5 sm:mt-1">
-              {steps[4].title}
-            </h3>
-          </div>
-
-          {/* Node 6: Sales and marketing (Bottom-Left) */}
-          <div
-            onClick={() => setActiveStep(activeStep === 6 ? null : 6)}
-            onMouseEnter={() => setActiveStep(6)}
-            onMouseLeave={() => setActiveStep(null)}
-            className={`absolute left-[0.5%] sm:left-[2%] lg:left-[3%] bottom-[3%] sm:bottom-[5%] lg:bottom-[8%] w-[86px] xs:w-[105px] sm:w-[160px] md:w-[210px] lg:w-[230px] flex flex-col items-center text-center transition-all duration-300 z-10 cursor-pointer ${
-              activeStep === 6 ? "scale-105" : "hover:scale-102"
-            }`}
-          >
-            <div className="p-0.5 xs:p-1 sm:p-2 transition-transform duration-300">
-              {steps[5].icon}
-            </div>
-            <h3 className="font-sans text-[7px] xs:text-[8.5px] sm:text-xs lg:text-[13px] font-bold text-brand-espresso leading-tight sm:leading-snug max-w-[82px] xs:max-w-[100px] sm:max-w-[170px] md:max-w-[200px] mt-0.5 sm:mt-1">
-              {steps[5].title}
-            </h3>
-          </div>
+            return (
+              <div
+                key={step.id}
+                onClick={() => setActiveStep(isActive ? null : step.id)}
+                onMouseEnter={() => setActiveStep(step.id)}
+                onMouseLeave={() => setActiveStep(null)}
+                style={{ left: pos.left, top: pos.top }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center text-center z-10 cursor-pointer group"
+              >
+                <div
+                  className={`transition-all duration-300 p-0.5 sm:p-1 ${
+                    isActive ? "scale-110 drop-shadow-md" : "group-hover:scale-105"
+                  }`}
+                >
+                  <div className="flex items-center justify-center">
+                    {step.icon}
+                  </div>
+                </div>
+                <h3
+                  className={`font-sans text-[7.5px] xs:text-[8.5px] sm:text-xs md:text-[13px] font-bold text-brand-espresso leading-tight sm:leading-snug ${pos.titleMaxW} mt-0.5 sm:mt-1 transition-colors duration-200 ${
+                    isActive ? "text-[#2D5A27]" : "group-hover:text-[#2D5A27]"
+                  }`}
+                >
+                  {step.title}
+                </h3>
+              </div>
+            );
+          })}
         </div>
 
       </div>
